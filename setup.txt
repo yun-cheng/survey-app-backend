@@ -1,0 +1,13 @@
+
+# 安裝 environment.yml 所列的套件
+conda env update
+
+# 輸出 requirements.txt
+pip freeze > requirements.txt
+
+# Cloud Functions
+gcloud functions deploy quiz-result \
+ --entry-point main \
+ --runtime python37 \
+ --trigger-http \
+ --allow-unauthenticated

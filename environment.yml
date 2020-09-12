@@ -1,0 +1,11 @@
+name: interviewer_quiz_backend
+channels:
+  - conda-forge
+dependencies:
+  - pip
+  - pip:
+      - flask
+      - gunicorn
+      - pandas
+      - pygsheets
+      - firebase-admin
