@@ -4,7 +4,12 @@ from common import *
 
 # TODO 移到設定
 def load_credentials():
-    with open('credentials.json', 'r') as file:
+    if os.environ['ENV'] == 'dev':
+        credentials_file = 'credentials_dev.json'
+    else:
+        credentials_file = 'credentials.json'
+
+    with open(credentials_file, 'r') as file:
         credentials_dict = json.load(file)
     os.environ['CREDENTIALS'] = str(json.dumps(credentials_dict))
 

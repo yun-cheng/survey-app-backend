@@ -1,4 +1,4 @@
-from common import *
+
 from load_credentials import *
 from project import Project
 from quiz import Quiz
@@ -20,7 +20,7 @@ def main():
     email = request.args.get('email', '')  # TODO
 
     # NOTE credentials
-    load_credentials()
+    # load_credentials()
     gsheets = load_gsheets()  # HIGHLIGHT 需開啟 Google Sheets API
     db = load_firestore()
 
