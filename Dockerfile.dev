@@ -10,6 +10,7 @@ COPY . .
 # This default value facilitates local development.
 ENV PORT 8080
 ENV ENV dev
+# HIGHLIGHT 目前需手動添加 CREDENTIALS environment variable
 
 # Run the web service on container startup. Here we use the gunicorn
 # webserver, with one worker process and 8 threads.

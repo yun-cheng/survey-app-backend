@@ -10,7 +10,7 @@ class Project:
     def create(self, email):
         # NOTE 連接模板
         template_id = '1u1NdL7ZND_E3hU1jS2SNhhDIluIuHrcHpG4W9XyUChQ'
-        template_spreadsheet = self.gsheets.open_by_key(template_id)
+        template_spreadsheet = self.gsheets.open_by_key(template_id)  # HIGHLIGHT 需開啟 Google Sheets API
 
         # NOTE 創立新的 spreadsheet
         spreadsheet = self.gsheets.create('新建立之專案設定檔(可自訂名稱)')
@@ -40,7 +40,7 @@ class Project:
         # TAG 寫入 Firestore
         result_message = self.update(gsid=spreadsheet.id)
 
-        # NOTE 設定分享權限，HIGHLIGHT 需開啟 Drive API
+        # NOTE 設定分享權限，HIGHLIGHT 需開啟 Google Drive API
         spreadsheet.share(email, 'writer', emailMessage='新建立之專案設定檔')
         # TODO 到時我的權限可拿掉
         spreadsheet.share('yuncheng.dev@gmail.com', 'writer', emailMessage='新建立之測驗設定檔')
