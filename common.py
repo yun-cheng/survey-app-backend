@@ -15,7 +15,11 @@ from google.cloud.firestore_v1 import DocumentReference, CollectionReference, Qu
 
 
 # TODO 切換 prod/dev
-main_url = 'https://interviewer-quiz-lrqnbewzdq-de.a.run.app/'
+if os.environ['ENV'] == 'dev':
+    main_url = 'https://interviewer-quiz-backend-hhbdnactua-de.a.run.app'
+
+else:
+    main_url = 'https://interviewer-quiz-lrqnbewzdq-de.a.run.app/'
 
 
 def get_worksheet_df(spreadsheet, worksheet_title):
