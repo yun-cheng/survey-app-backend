@@ -33,20 +33,13 @@ class Quiz:
         worksheet = spreadsheet.worksheet_by_title('測驗資訊')
         worksheet.update_value('B3', '')
 
-        # TAG 寫入 Firestore
-        result_message = self.update(gsid=spreadsheet.id)
-
         # NOTE 設定分享權限
         spreadsheet.share(email, 'writer', emailMessage='新建立之測驗設定檔')
         # TODO 到時我的權限可拿掉
         spreadsheet.share('yuncheng.dev@gmail.com', 'writer', emailMessage='新建立之測驗設定檔')
         # spreadsheet.share('yuncheng.dev@gmail.com', 'owner', transferOwnership=True)  # NOTE 轉移所有權
 
-        if result_message == '更新測驗成功!':
-            return '新建立之測驗設定檔連結已寄至信箱（可能會在垃圾郵件中....），或複製此連結進入：<br/><br/> {}'.format(spreadsheet.url)
-
-        else:
-            return '建立測驗失敗!'
+        return '新建立之測驗設定檔連結已寄至信箱（可能會在垃圾郵件中....），或複製此連結進入：<br/><br/> {}'.format(spreadsheet.url)
 
     def update(self, gsid):
         try:
