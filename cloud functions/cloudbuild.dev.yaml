@@ -16,5 +16,5 @@ steps:
     - --trigger-event=providers/cloud.firestore/eventTypes/document.write
     - --trigger-resource=projects/survey-dev-8bc44/databases/(default)/documents/quiz_result/{reply_id}
     # NOTE 設定環境
-    - --set-env-vars=ENV=prod
+    - --set-env-vars=ENV=dev
   dir: 'cloud functions'
