@@ -15,6 +15,5 @@ steps:
     - --region=asia-northeast1
     - --trigger-event=providers/cloud.firestore/eventTypes/document.write
     - --trigger-resource=projects/survey-dev-8bc44/databases/(default)/documents/quiz_result/{reply_id}
-  env:
-    - 'ENV=dev'
+    - --set-ennv-vars=ENV=dev
   dir: 'cloud functions'
