@@ -12,6 +12,9 @@ steps:
     - quiz-result-to-gsheets
     - --runtime=python37
     - --entry-point=quiz_result_to_gsheets
+    - --region=asia-northeast1
     - --trigger-event=providers/cloud.firestore/eventTypes/document.write
     - --trigger-resource=projects/survey-dev-8bc44/databases/(default)/documents/quiz_result/{reply_id}
+  env:
+    - 'ENV=dev'
   dir: 'cloud functions'
