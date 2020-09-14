@@ -14,10 +14,9 @@ from flask import Flask, request
 from google.cloud.firestore_v1 import DocumentReference, CollectionReference, Query
 
 
-# TODO 切換 prod/dev
+# NOTE 切換 prod/dev
 if os.environ['ENV'] == 'dev':
     main_url = 'https://interviewer-quiz-backend-hhbdnactua-de.a.run.app'
-
 else:
     main_url = 'https://interviewer-quiz-lrqnbewzdq-de.a.run.app/'
 
