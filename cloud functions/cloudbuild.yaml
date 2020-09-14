@@ -1,0 +1,17 @@
+steps:
+- name: 'docker.io/library/python:3.7'
+  entrypoint: /bin/sh
+  # Run pip install and pytest in the same build step
+  # (pip packages won't be preserved in future steps!)
+#  args: [-c, 'pip install -r requirements.txt', '&&', 'pytest']
+  dir: 'cloud functions'
+- name: 'gcr.io/cloud-builders/gcloud'
+  args:
+    - functions
+    - deploy
+    - quiz-result-to-gsheets
+    - --runtime=python37
+    - --entry-point=quiz_result_to_gsheets
+    - --trigger-event=providers/cloud.firestore/eventTypes/document.write
+    - --trigger-resource=quiz_result/{reply_id}
+  dir: 'cloud functions'
