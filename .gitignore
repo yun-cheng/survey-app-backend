@@ -3,3 +3,8 @@ firebase/*
 
 credentials.json
 credentials_dev.json
+
+__pycache__/*
+
+.vscode/*
+*.code-workspace

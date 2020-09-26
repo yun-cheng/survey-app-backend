@@ -8,56 +8,59 @@ class Quiz:
         self.db = db
 
     def create(self, email):
-        # NOTE 連接模板
+        # S_1-1 連接模板
         template_id = '1kFso7_L21vzRpeeHDgpl9HLAlP8SSVZ_vgpH_qQvS3I'
         template_spreadsheet = self.gsheets.open_by_key(template_id)
 
-        # NOTE 創立新的 spreadsheet
+        # S_1-2 創立新的 spreadsheet
         spreadsheet = self.gsheets.create('新建立之測驗設定檔(可自訂名稱)')
 
-        # NOTE 從模板複製到新創立的 spreadsheet
+        # S_1-3 從模板複製到新創立的 spreadsheet
         for i in range(5):
             worksheet = template_spreadsheet.worksheet('index', i).copy_to(spreadsheet.id)
             worksheet.title = re.search(r'(?<=\s)\S+$', worksheet.title).group(0)
 
-        # NOTE 刪除初始 worksheet
+        # S_1-4 刪除初始 worksheet
         sheet1 = spreadsheet.worksheet_by_title('Sheet1')
         spreadsheet.del_worksheet(sheet1)
 
-        # NOTE "更新此測驗"連結
+        # S_1-5 "更新此測驗"連結
         worksheet = spreadsheet.worksheet_by_title('說明')
         update_url = '{}?update_type=quiz_all&quiz_id={}'.format(main_url, spreadsheet.id)
         worksheet.update_value('A3', '=HYPERLINK("{}", "更新此測驗")'.format(update_url))
 
-        # NOTE 清空 "連結專案 ID"
+        # S_1-6 清空 "連結專案 ID"
         worksheet = spreadsheet.worksheet_by_title('測驗資訊')
         worksheet.update_value('B3', '')
 
-        # NOTE 設定分享權限
+        # S_1-7 設定分享權限
         spreadsheet.share(email, 'writer', emailMessage='新建立之測驗設定檔')
         # TODO 到時我的權限可拿掉
         spreadsheet.share('yuncheng.dev@gmail.com', 'writer', emailMessage='新建立之測驗設定檔')
-        # spreadsheet.share('yuncheng.dev@gmail.com', 'owner', transferOwnership=True)  # NOTE 轉移所有權
+        # NOTE 轉移所有權
+        # spreadsheet.share('yuncheng.dev@gmail.com', 'owner', transferOwnership=True)
 
         return '新建立之測驗設定檔連結已寄至信箱（可能會在垃圾郵件中....），或複製此連結進入：<br/><br/> {}'.format(spreadsheet.url)
 
     def update(self, gsid):
         try:
-            # NOTE 連接 spreadsheet
+            # S_1-1 連接 spreadsheet
             spreadsheet = self.gsheets.open_by_key(gsid)
 
-            # NOTE 提取資訊
+            # S_1-2 提取資訊
             # TODO 處理日期 https://api.dart.dev/stable/2.9.0/dart-core/DateTime/parse.html
             quiz_df = get_worksheet_df(spreadsheet, worksheet_title='測驗資訊')
             quiz_df['info_name'] = ['name', 'projectId', 'startTime', 'endTime']
             quiz_dict = quiz_df.set_index('info_name').T.to_dict('records')[0]
 
-            # NOTE TODO 檢查輸入的內容是否符合格式
+            # S_1-3
+            # TODO 檢查輸入的內容是否符合格式
             for k, v in quiz_dict.items():
                 if k in ['name', 'projectId'] and not v:
                     return '測驗名稱或連結專案 ID 不能為空!'
 
-            # TAG 更新 quiz
+            # S_2-1 更新 quiz
+            # TAG firestore
             # EXAMPLE
             '''
             quiz / {gsid} / {
@@ -69,7 +72,8 @@ class Quiz:
             '''
             dict_to_firestore(quiz_dict, self.db.document('quiz', gsid))
 
-            # TAG 更新 question_list
+            # S_2-2 更新 question_list
+            # TAG firestore
             # EXAMPLE
             '''
             quiz / {gsid} / {
@@ -83,7 +87,8 @@ class Quiz:
             question_list_dict = df_to_dict(question_list_df, ['id', 'body', 'answer'])
             dict_to_firestore(question_list_dict, self.db.document('question_list', gsid))
 
-            # TAG 更新 interviewer_quiz
+            # S_2-3 更新 interviewer_quiz
+            # TAG firestore
             project_id = quiz_dict['projectId']
             self.update_interviewer_quiz(project_id=project_id, gsid=gsid, quiz_dict=quiz_dict)
 
