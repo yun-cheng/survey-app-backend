@@ -8,52 +8,46 @@ class Project:
         self.db = db
 
     def create(self, email):
-        # S_1-1 連接模板
-        # HIGHLIGHT 需開啟 Google Sheets API
-        template_id = '1u1NdL7ZND_E3hU1jS2SNhhDIluIuHrcHpG4W9XyUChQ'
-        template_spreadsheet = self.gsheets.open_by_key(template_id)
+        try:
+            # S_1 創立並設定新的 spreadsheet
+            # S_1-1 連接模板
+            # HIGHLIGHT 需開啟 Google Sheets API
+            template_id = '1u1NdL7ZND_E3hU1jS2SNhhDIluIuHrcHpG4W9XyUChQ'
+            template_spreadsheet = self.gsheets.open_by_key(template_id)
 
-        # S_1-2 創立新的 spreadsheet
-        spreadsheet = self.gsheets.create('新建立之專案設定檔(可自訂名稱)')
+            # S_1-2 創立新的 spreadsheet
+            spreadsheet = self.gsheets.create('新建立之專案設定檔(可自訂名稱)')
 
-        # S_1-3 從模板複製到新創立的 spreadsheet
-        for i in range(3):
-            worksheet = template_spreadsheet.worksheet('index', i).copy_to(spreadsheet.id)
-            worksheet.title = re.search(r'(?<=\s)\S+$', worksheet.title).group(0)
+            # S_1-3 從模板複製到新創立的 spreadsheet
+            for i in range(2):
+                worksheet = template_spreadsheet.worksheet('index', i).copy_to(spreadsheet.id)
+                worksheet.title = re.search(r'(?<=\s)\S+$', worksheet.title).group(0)
 
-        # S_1-4 刪除初始 worksheet
-        sheet1 = spreadsheet.worksheet_by_title('Sheet1')
-        spreadsheet.del_worksheet(sheet1)
+            # S_1-4 刪除初始 worksheet
+            sheet1 = spreadsheet.worksheet_by_title('Sheet1')
+            spreadsheet.del_worksheet(sheet1)
 
-        # S_1-5 "更新此專案"連結
-        worksheet = spreadsheet.worksheet_by_title('說明')
-        update_url = '{}?update_type=project&project_key={}'.format(main_url, spreadsheet.id)
-        worksheet.update_value('A3', '=HYPERLINK("{}", "更新此專案")'.format(update_url))
+            # S_1-5 '更新此專案設定' 連結
+            worksheet = spreadsheet.worksheet_by_title('說明')
+            update_url = f'{main_url}?action=update&on=project&gsid={spreadsheet.id}'
+            worksheet.update_value('A3', f'=HYPERLINK("{update_url}", "更新此專案設定")')
 
-        # S_1-6 "刪除此專案"連結
-        delete_url = '{}?delete_type=project&project_key={}'.format(main_url, spreadsheet.id)
-        worksheet.update_value('A4', '=HYPERLINK("{}", "刪除此專案")'.format(delete_url))
+            # S_1-6 '刪除此專案' 連結
+            delete_url = f'{main_url}?action=delete&on=unit&gsid={spreadsheet.id}'
+            worksheet.update_value('A4', f'=HYPERLINK("{delete_url}", "刪除此專案")')
 
-        # S_1-7 "自訂專案 ID"
-        worksheet = spreadsheet.worksheet_by_title('專案資訊')
-        worksheet.update_value('B6', spreadsheet.id)
+            # S_1-7 設定分享權限
+            email_message = '新建立之專案設定檔'
+            spreadsheet.share(email, 'writer', emailMessage=email_message)
+            # TODO 到時我的權限可拿掉
+            spreadsheet.share('yuncheng.dev@gmail.com', 'writer', emailMessage=email_message)
+            # NOTE 轉移所有權
+            # spreadsheet.share('yuncheng.dev@gmail.com', 'owner', transferOwnership=True)
 
-        # S_2 寫入 Firestore
-        # TAG update
-        result_message = self.update(gsid=spreadsheet.id)
-
-        # S_1-8 設定分享權限
-        # HIGHLIGHT 需開啟 Google Drive API
-        spreadsheet.share(email, 'writer', emailMessage='新建立之專案設定檔')
-        # TODO 到時我的權限可拿掉
-        spreadsheet.share('yuncheng.dev@gmail.com', 'writer', emailMessage='新建立之測驗設定檔')
-        # NOTE 轉移所有權
-        # spreadsheet.share('yuncheng.dev@gmail.com', 'owner', transferOwnership=True)
-
-        if result_message == '更新專案成功!':
-            return '新建立之專案設定檔連結已寄至信箱（可能會在垃圾郵件中....），或複製此連結進入：<br/><br/> {}'.format(spreadsheet.url)
-        else:
+        except:
             return '建立專案失敗!'
+
+        return f'新建立之專案設定檔連結已寄至信箱（可能會在垃圾郵件中....），或複製此連結進入：<br/><br/> {spreadsheet.url}'
 
     def update(self, gsid):
         try:
@@ -61,141 +55,116 @@ class Project:
             spreadsheet = self.gsheets.open_by_key(gsid)
 
             # S_1-2 提取資訊
-            project_df = get_worksheet_df(spreadsheet, worksheet_title='專案資訊')
-            project_df['info_name'] = ['unitName', 'projectName', 'id', 'password', 'projectId']
-            project_dict = project_df.set_index('info_name').T.to_dict('records')[0]
-            project_id = project_dict['projectId']
-            project_dict['gsheetsId'] = gsid
+            project_info = spreadsheet.worksheet_by_title('專案資訊') \
+                .get_values(start='C2', end='C4', include_all=True)
 
-            # S_1-3
-            # TODO 檢查輸入的內容是否符合格式
-            for k, v in project_dict.items():
+            project_info_dict = {
+                'projectId': gsid,
+                'customProjectId': project_info[0][0],
+                'projectName': project_info[1][0],
+                'customUnitId': project_info[2][0],
+            }
+
+            # S_1-3 檢查輸入的內容是否符合格式
+            # S_1-3-1 檢查是否為空
+            for k, v in project_info_dict.items():
                 if not v:
                     return '專案資訊不能為空!'
 
-            # S_2-1 更新 project
-            # TAG firestore
+            # S_1-3-2 檢查連結的單位 ID 是否存在
+            unit_list_ref = self.db.document('unitList', 'unitList')
+            unit_list_dict = unit_list_ref.doc_to_dict()
+
+            if unit_list_dict:
+                for k, v in unit_list_dict.items():
+                    if v['customUnitId'] == project_info_dict['customUnitId']:
+                        project_info_dict['unitId'] = k
+                        unit_gsid = k
+                        project_info_dict.pop('customUnitId')
+                        break
+
+            if not unit_gsid:
+                return '找不到連結的單位 ID！'
+
+            # S_1-3-3 檢查是否為重複的專案 ID 或名稱
+            project_list_ref = self.db.document('projectList', unit_gsid)
+            project_list_dict = project_list_ref.doc_to_dict()
+
+            if project_list_dict:
+                for k, v in project_list_dict.items():
+                    if k != gsid:
+                        if v['customProjectId'] == project_info_dict['customProjectId']:
+                            return '專案 ID 重複，請輸入其他 ID！'
+                        elif v['projectName'] == project_info_dict['projectName']:
+                            return '專案名稱重複，請輸入其他名稱！'
+
+            # S_2 更新 Firestore
+            batch = self.db.batch()
+
+            # S_2-1 更新 Firestore: project/{projectId}
+            # TAG Firestore SET
             # EXAMPLE
             '''
-            project / demo_project_id / {
-                gsheetsId: '1u1NdL7ZND_E3hU1jS2SNhhDIluIuHrcHpG4W9XyUChQ',
-                id: 'demo_admin',
-                password: 'demo_password',
-                projectId: 'demo_project_id',
+            project / {projectId} / {
+                projectId: '1u1NdL7ZND_E3hU1jS2SNhhDIluIuHrcHpG4W9XyUChQ',
+                customProjectId: 'demo_project_id',
                 projectName: '範例專案',
-                unitName: '範例單位'
+                unitId: '1VRGeK8m-w_ZCjg1SDQ74TZ7jpHsRiTiI3AcD54I5FC8'
             }
             '''
-            # NOTE query 回來就會是 doc generator，必須要用迴圈提取，即使只有一筆
-            docs = self.db.collection('project').where('gsheetsId', '==', gsid).stream()
-            for doc in docs:
-                self.db.document('project', doc.id).delete()
+            project_ref = self.db.document('project', gsid)
+            batch.set(project_ref, project_info_dict)
 
-            dict_to_firestore(project_dict, self.db.document('project', project_id))
-
-            # S_2-2 更新 project_list
-            # TAG firestore
+            # S_2-2 更新 Firestore: projectList/{unitId}
+            # TAG Firestore UPDATE
             # EXAMPLE
             '''
-            project_list / project_list / {
-                'list': [{
-                    gsheetsId: '1u1NdL7ZND_E3hU1jS2SNhhDIluIuHrcHpG4W9XyUChQ',
-                    projectId: 'demo_project_id',
-                    projectName: '範例專案'
-                }, ...]
+            project_list / {unitId} / {
+                {projectId}: (project data)
             }
             '''
-            doc_ref = self.db.document('project_list', 'project_list')
-            project_list_dict = doc_ref.doc_to_dict()
+            batch.set(project_list_ref, {
+                gsid: project_info_dict
+            }, merge=True)
 
-            new_project_dict = {
-                'projectId': project_dict['projectId'],
-                'projectName': project_dict['projectName'],
-                'gsheetsId': project_dict['gsheetsId'],
-            }
-            if not project_list_dict:
-                new_project_list = [new_project_dict]
-            else:
-                old_project_list = project_list_dict['list']
-                new_project_list = []
-                for project in old_project_list:
-                    if project['gsheetsId'] != gsid:
-                        new_project_list.append(project)
-
-                new_project_list.append(new_project_dict)
-
-            dict_to_firestore({
-                'list': new_project_list
-            }, doc_ref)
-
-            # S_2-3 更新 interviewer
-            # TAG firestore
-            # EXAMPLE
-            '''
-            interviewer / demo_project_id / {
-                list: [
-                    {id: 'id001', name: 'AAA', password: 'password001'},
-                    ...
-                ]
-            }
-            '''
-            interviewer_df = get_worksheet_df(spreadsheet, worksheet_title='訪員帳號')
-            interviewer_dict = df_to_dict(interviewer_df, ['id', 'password', 'name'])
-
-            dict_to_firestore(interviewer_dict, self.db.document('interviewer', project_id))
-
-            # TODO interviewer_quiz 要刪掉去除的訪員
+            batch.commit()
 
         except:
-            return '更新專案失敗!'
+            return '更新專案設定失敗!'
 
-        return '更新專案成功!'
+        return '更新專案設定成功!'
 
     def delete(self, gsid):
         try:
+            # S_1 刪除 Firestore
             batch = self.db.batch()
 
-            # S_1 調出該 gsid 的 project_id
-            project_query = self.db.collection('project') \
-                .where('gsheetsId', '==', gsid)
-            docs = project_query.stream()
-            for doc in docs:
-                project_dict = doc.to_dict()
+            # S_1-1 刪除 Firestore: project/{projectId}
+            # TAG Firestore DELETE
+            project_ref = self.db.document('project', gsid)
+            project_dict = project_ref.doc_to_dict()
+            unit_gsid = project_dict['unitId']
+            batch.delete(project_ref)
 
-            project_id = project_dict['projectId']
-
-            # S_2-1 刪除 project/{project_id}/{data}
-            batch.delete(self.db.document('project', project_id))
-
-            # S_2-2 刪除 project_list/project_list/list 中該 project
-            # TAG firestore
-            doc_ref = self.db.document('project_list', 'project_list')
-            project_list_dict = doc_ref.doc_to_dict()
-
-            old_project_list = project_list_dict['list']
-            new_project_list = []
-            for project in old_project_list:
-                if project['gsheetsId'] != gsid:
-                    new_project_list.append(project)
-
-            batch.set(doc_ref, {
-                'list': new_project_list
+            # S_1-2 刪除 Firestore: projectList/{unitId}
+            # TAG Firestore DELETE
+            project_list_ref = self.db.document('projectList', unit_gsid)
+            batch.update(project_list_ref, {
+                gsid: firestore.DELETE_FIELD
             })
 
-            # S_2-3 刪除 interviewer/{project_id}/{data}
-            # TAG firestore
-            batch.delete(self.db.document('interviewer', project_id))
-
-            # S_2-4 刪除 interviewer_quiz/{interviewer_id_project_id}/{data}
-            # TAG firestore
-            docs = self.db.collection('interviewer_quiz').where('projectId', '==', project_id).stream()
-            for doc in docs:
-                batch.delete(self.db.document('interviewer_quiz', doc.id))
+            # S_1-3 刪除 interviewer_quiz/{interviewer_id_project_id}/{data}
+            # TAG Firestore DELETE
+            # TODO
+            # docs = self.db.collection('interviewer_quiz').where('projectId', '==', project_id).stream()
+            # for doc in docs:
+            #     batch.delete(self.db.document('interviewer_quiz', doc.id))
 
             # NOTE 保留相關測驗
             # NOTE 保留相關測驗紀錄
 
             batch.commit()
+
         except:
             return '刪除專案失敗!'
 
