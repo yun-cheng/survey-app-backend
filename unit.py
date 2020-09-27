@@ -14,10 +14,11 @@ class Unit:
 
         # S_1-2 創立新的 spreadsheet
         spreadsheet = self.gsheets.create('新建立之單位設定檔(可自訂名稱)')
+        gsid = spreadsheet.id
 
         # S_1-3 從模板複製到新創立的 spreadsheet
         for i in range(3):
-            worksheet = template_spreadsheet.worksheet('index', i).copy_to(spreadsheet.id)
+            worksheet = template_spreadsheet.worksheet('index', i).copy_to(gsid)
             worksheet.title = re.search(r'(?<=\s)\S+$', worksheet.title).group(0)
 
         # S_1-4 刪除初始 worksheet
@@ -26,11 +27,11 @@ class Unit:
 
         # S_1-5 '更新此單位設定' 連結
         worksheet = spreadsheet.worksheet_by_title('說明')
-        update_url = f'{main_url}?action=update&on=unit&gsid={spreadsheet.id}'
+        update_url = f'{main_url}?action=update&on=unit&gsid={gsid}'
         worksheet.update_value('A3', f'=HYPERLINK("{update_url}", "更新此單位設定")')
 
         # S_1-6 '刪除此單位' 連結
-        delete_url = f'{main_url}?action=delete&on=unit&gsid={spreadsheet.id}'
+        delete_url = f'{main_url}?action=delete&on=unit&gsid={gsid}'
         worksheet.update_value('A4', f'=HYPERLINK("{delete_url}", "刪除此單位")')
 
         # S_1-7 設定分享權限
@@ -53,23 +54,24 @@ class Unit:
                 .get_values(start='C2', end='C3', include_all=True)
 
             unit_info_dict = {
-                'unitId': spreadsheet.id,
+                'unitId': gsid,
                 'customUnitId': unit_info[0][0],
                 'unitName': unit_info[1][0]
             }
 
-            unit_list_ref = self.db.document('unitList', 'unitList')
-            unit_list_dict = unit_list_ref.doc_to_dict()
-
             # S_1-3 檢查輸入的內容是否符合格式
+            # S_1-3-1 檢查是否為空
             for k, v in unit_info_dict.items():
                 if not v:
                     return '單位資訊不能為空!'
 
-            # NOTE 檢查重複 ID 或名稱
+            # S_1-3-2 檢查是否為重複的單位 ID 或名稱
+            unit_list_ref = self.db.document('unitList', 'unitList')
+            unit_list_dict = unit_list_ref.doc_to_dict()
+
             if unit_list_dict:
                 for k, v in unit_list_dict.items():
-                    if k != spreadsheet.id:
+                    if k != gsid:
                         if v['customUnitId'] == unit_info_dict['customUnitId']:
                             return '單位 ID 重複，請輸入其他 ID！'
                         elif v['unitName'] == unit_info_dict['unitName']:
@@ -88,7 +90,7 @@ class Unit:
                 unitName: '範例單位名稱'
             }
             '''
-            unit_ref = self.db.document('unit', spreadsheet.id)
+            unit_ref = self.db.document('unit', gsid)
             batch.set(unit_ref, unit_info_dict)
 
             # S_2-2 更新 Firestore: unitList/unitList
@@ -100,7 +102,7 @@ class Unit:
             }
             '''
             batch.set(unit_list_ref, {
-                spreadsheet.id: unit_info_dict
+                gsid: unit_info_dict
             }, merge=True)
 
             # S_2-3 更新 Firestore: interviewer/{unitId}
@@ -120,7 +122,7 @@ class Unit:
                                           new_column_names=['interviewerId', 'interviewerPassword', 'interviewerName'],
                                           index_column='interviewerId')
 
-            interviewer_ref = self.db.document('interviewer', spreadsheet.id)
+            interviewer_ref = self.db.document('interviewer', gsid)
             batch.set(interviewer_ref, interviewer_dict)
 
             # S_2-4 更新 Firestore:
