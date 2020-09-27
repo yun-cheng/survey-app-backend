@@ -21,21 +21,23 @@ else:
     main_url = 'https://interviewer-quiz-lrqnbewzdq-de.a.run.app/'
 
 
-def get_worksheet_df(spreadsheet, worksheet_title):
-    df = spreadsheet.worksheet_by_title(worksheet_title).get_as_df(numerize=False)
+def get_worksheet_df(spreadsheet, worksheet_title, **kwargs):
+    df = spreadsheet.worksheet_by_title(worksheet_title)\
+        .get_as_df(numerize=False, include_tailing_empty=True, **kwargs)
 
     return df
 
 
-def df_to_dict(df, new_column_names):
+def df_to_dict(df, new_column_names, index_column):
     df.columns = new_column_names
-    dict = {'list': df.to_dict(orient='records')}
+    df.index = df[index_column]
+    dict = df.to_dict(orient='index')
 
     return dict
 
 
-def dict_to_firestore(dict, doc):
-    doc.set(dict)
+def dict_to_firestore(dict, doc, **kwargs):
+    doc.set(dict, **kwargs)
     result_dict = doc.doc_to_dict()
 
     return result_dict
