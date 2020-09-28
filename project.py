@@ -17,10 +17,11 @@ class Project:
 
             # S_1-2 創立新的 spreadsheet
             spreadsheet = self.gsheets.create('新建立之專案設定檔(可自訂名稱)')
+            gsid = spreadsheet.id
 
             # S_1-3 從模板複製到新創立的 spreadsheet
             for i in range(2):
-                worksheet = template_spreadsheet.worksheet('index', i).copy_to(spreadsheet.id)
+                worksheet = template_spreadsheet.worksheet('index', i).copy_to(gsid)
                 worksheet.title = re.search(r'(?<=\s)\S+$', worksheet.title).group(0)
 
             # S_1-4 刪除初始 worksheet
@@ -29,11 +30,11 @@ class Project:
 
             # S_1-5 '更新此專案設定' 連結
             worksheet = spreadsheet.worksheet_by_title('說明')
-            update_url = f'{main_url}?action=update&on=project&gsid={spreadsheet.id}'
+            update_url = f'{main_url}?action=update&on=project&gsid={gsid}'
             worksheet.update_value('A3', f'=HYPERLINK("{update_url}", "更新此專案設定")')
 
             # S_1-6 '刪除此專案' 連結
-            delete_url = f'{main_url}?action=delete&on=unit&gsid={spreadsheet.id}'
+            delete_url = f'{main_url}?action=delete&on=unit&gsid={gsid}'
             worksheet.update_value('A4', f'=HYPERLINK("{delete_url}", "刪除此專案")')
 
             # S_1-7 設定分享權限
@@ -147,13 +148,15 @@ class Project:
             batch.delete(project_ref)
 
             # S_1-2 刪除 Firestore: projectList/{unitId}
-            # TAG Firestore DELETE
+            # TAG Firestore UPDATE
             project_list_ref = self.db.document('projectList', unit_gsid)
-            batch.update(project_list_ref, {
+            batch.set(project_list_ref, {
                 gsid: firestore.DELETE_FIELD
-            })
+            }, merge=True)
 
-            # S_1-3 刪除 interviewer_quiz/{interviewer_id_project_id}/{data}
+            # S_ 刪除 quizList/{unitId}
+
+            # S_1-3 刪除 interviewer_quiz/{interviewerId_projectId}
             # TAG Firestore DELETE
             # TODO
             # docs = self.db.collection('interviewer_quiz').where('projectId', '==', project_id).stream()

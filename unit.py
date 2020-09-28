@@ -150,11 +150,11 @@ class Unit:
             batch.delete(unit_ref)
 
             # S_1-2 刪除 Firestore: unitList/unitList
-            # TAG Firestore DELETE
+            # TAG Firestore UPDATE
             unit_list_ref = self.db.document('unitList', 'unitList')
-            batch.update(unit_list_ref, {
+            batch.set(unit_list_ref, {
                 gsid: firestore.DELETE_FIELD
-            })
+            }, merge=True)
 
             # S_1-3 刪除 Firestore: interviewerList/{unitId}
             # TAG Firestore DELETE
