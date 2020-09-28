@@ -13,7 +13,8 @@ def main():
     action = request.args.get('action', '')
     on = request.args.get('on', '')
     gsid = request.args.get('gsid', '')
-    # interviewer_id = request.args.get('interviewer_id', '')
+    project_gsid = request.args.get('project_gsid', '')
+    interviewer_id = request.args.get('interviewer_id', '')
     # TODO
     email = request.args.get('email', '')
 
@@ -56,15 +57,18 @@ def main():
             return quiz.create(email=email)
 
         elif action == 'update' and gsid:
-            return quiz.update(gsid=gsid) + quiz.update_result(gsid=gsid)
+            return quiz.update(gsid=gsid)
 
-        elif action == 'update_result' and gsid:
-            return quiz.update_result(gsid=gsid)
+        elif action == 'update_result' and gsid and project_gsid and interviewer_id:
+            return quiz.update_result(gsid=gsid, project_gsid=project_gsid, interviewer_id=interviewer_id)
 
         elif action == 'delete' and gsid:
             return quiz.delete(gsid=gsid)
 
-    return 'Something wrong....'
+        elif action == 'delete_result' and gsid:
+            return quiz.delete_result(gsid=gsid)
+
+    return '系統出現問題....'
 
 
 if __name__ == '__main__':

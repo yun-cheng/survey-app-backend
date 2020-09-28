@@ -49,9 +49,16 @@ def doc_to_dict(self):
     return doc_dict
 
 
-def query_to_dict(self):
+def query_to_dict(self, first=False):
     docs = self.stream()
-    query_dict = {doc.id: doc.to_dict() for doc in docs}
+
+    query_dict = {}
+    for doc in docs:
+        if first:
+            query_dict = doc.to_dict()
+            break
+        query_dict[doc.id] = doc.to_dict()
+
     return query_dict
 
 
