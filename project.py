@@ -154,17 +154,30 @@ class Project:
                 gsid: firestore.DELETE_FIELD
             }, merge=True)
 
-            # S_ 刪除 quizList/{unitId}
+            # S_1-3 刪除 quizList/{unitId}
+            # TAG Firestore UPDATE
+            quiz_list_ref = self.db.document('quizList', unit_gsid)
+            batch.set(quiz_list_ref, {
+                gsid: firestore.DELETE_FIELD
+            }, merge=True)
 
-            # S_1-3 刪除 interviewer_quiz/{interviewerId_projectId}
+            # S_1-4 刪除 quiz/{quizId}
             # TAG Firestore DELETE
-            # TODO
-            # docs = self.db.collection('interviewer_quiz').where('projectId', '==', project_id).stream()
-            # for doc in docs:
-            #     batch.delete(self.db.document('interviewer_quiz', doc.id))
+            quiz_docs = self.db.collection('quiz') \
+                .where('projectId', '==', gsid) \
+                .stream()
 
-            # NOTE 保留相關測驗
-            # NOTE 保留相關測驗紀錄
+            for doc in quiz_docs:
+                batch.delete(doc.reference)
+
+            # S_1-5 刪除 interviewerQuiz/{interviewerId_projectId}
+            # TAG Firestore DELETE
+            interviewer_quiz_docs = self.db.collection('interviewerQuiz') \
+                .where('projectId', '==', gsid) \
+                .stream()
+
+            for doc in interviewer_quiz_docs:
+                batch.delete(doc.reference)
 
             batch.commit()
 
