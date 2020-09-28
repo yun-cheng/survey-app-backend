@@ -137,7 +137,7 @@ class Project:
 
     def delete(self, gsid):
         try:
-            # S_1 刪除 Firestore
+            # S_1 刪除 Firestore: project 本身的資料
             batch = self.db.batch()
 
             # S_1-1 刪除 Firestore: project/{projectId}
@@ -154,14 +154,15 @@ class Project:
                 gsid: firestore.DELETE_FIELD
             }, merge=True)
 
-            # S_1-3 刪除 quizList/{unitId}
+            # S_2 刪除 Firestore: 相關聯的資料
+            # S_2-1 刪除 quizList/{unitId}
             # TAG Firestore UPDATE
             quiz_list_ref = self.db.document('quizList', unit_gsid)
             batch.set(quiz_list_ref, {
                 gsid: firestore.DELETE_FIELD
             }, merge=True)
 
-            # S_1-4 刪除 quiz/{quizId}
+            # S_2-2 刪除 quiz/{quizId}
             # TAG Firestore DELETE
             quiz_docs = self.db.collection('quiz') \
                 .where('projectId', '==', gsid) \
@@ -170,7 +171,7 @@ class Project:
             for doc in quiz_docs:
                 batch.delete(doc.reference)
 
-            # S_1-5 刪除 interviewerQuiz/{interviewerId_projectId}
+            # S_2-3 刪除 interviewerQuiz/{interviewerId_projectId}
             # TAG Firestore DELETE
             interviewer_quiz_docs = self.db.collection('interviewerQuiz') \
                 .where('projectId', '==', gsid) \
