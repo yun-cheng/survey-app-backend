@@ -3,6 +3,7 @@ import os
 from collections import defaultdict
 import pytz
 import re
+import ast
 from dateutil.parser import parse
 
 import firebase_admin
@@ -24,6 +25,7 @@ else:
 def get_worksheet_df(spreadsheet, worksheet_title, **kwargs):
     df = spreadsheet.worksheet_by_title(worksheet_title)\
         .get_as_df(numerize=False, include_tailing_empty=True, **kwargs)
+    df = df.loc[:, df.columns != '']
 
     return df
 

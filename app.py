@@ -3,6 +3,7 @@ from load_credentials import *
 from unit import Unit
 from project import Project
 from quiz import Quiz
+from survey import Survey
 
 app = Flask(__name__)
 
@@ -30,6 +31,8 @@ def main():
         target = Project(gsheets=gsheets, db=db)
     elif on == 'quiz':
         target = Quiz(gsheets=gsheets, db=db)
+    elif on == 'survey':
+        target = Survey(gsheets=gsheets, db=db)
 
     if on:
         if action == 'create' and email:
