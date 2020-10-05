@@ -59,7 +59,9 @@ class Survey:
     def update(self, gsid):
         try:
             # S_1-1 連接 spreadsheet
-            spreadsheet = self.gsheets.open_by_key(gsid)
+            gsheets = self.gsheets
+            db = self.db
+            spreadsheet = gsheets.open_by_key(gsid)
 
             # S_1-2 提取資訊
             survey_info = spreadsheet.worksheet_by_title('問卷資訊') \
@@ -90,7 +92,7 @@ class Survey:
                 return '問卷資訊不能為空!'
 
             # S_1-3-2 檢查連結的單位 ID、專案 ID、問卷模組 ID 是否存在
-            unit_query = self.db.collection('unit') \
+            unit_query = db.collection('unit') \
                 .where('customUnitId', '==', survey_info_dict['customUnitId'])
             unit_dict = unit_query.query_to_dict(first=True)
 
@@ -101,7 +103,7 @@ class Survey:
             else:
                 return '找不到連結的單位 ID！'
 
-            project_query = self.db.collection('project') \
+            project_query = db.collection('project') \
                 .where('customProjectId', '==', survey_info_dict['customProjectId'])\
                 .where('unitId', '==', unit_gsid)
             project_query_dict = project_query.query_to_dict(first=True)
@@ -114,7 +116,7 @@ class Survey:
                 return '找不到連結的專案 ID！'
 
             if survey_info_dict['customVisitAddressId']:
-                survey_module_query = self.db.collection('survey') \
+                survey_module_query = db.collection('survey') \
                     .where('customSurveyId', '==', survey_info_dict['customVisitAddressId']) \
                     .where('projectId', '==', project_gsid)
                 survey_module_query_dict = survey_module_query.query_to_dict(first=True)
@@ -124,9 +126,11 @@ class Survey:
                     survey_info_dict.pop('customVisitAddressId')
                 else:
                     return '找不到連結的查址問卷模組 ID！'
+            else:
+                survey_info_dict.pop('customVisitAddressId')
 
             if survey_info_dict['customInHouseSamplingId']:
-                survey_module_query = self.db.collection('survey') \
+                survey_module_query = db.collection('survey') \
                     .where('customSurveyId', '==', survey_info_dict['customInHouseSamplingId']) \
                     .where('projectId', '==', project_gsid)
                 survey_module_query_dict = survey_module_query.query_to_dict(first=True)
@@ -136,28 +140,30 @@ class Survey:
                     survey_info_dict.pop('customInHouseSamplingId')
                 else:
                     return '找不到連結的戶中抽樣問卷模組 ID！'
+            else:
+                survey_info_dict.pop('customInHouseSamplingId')
 
             # S_1-3-3 檢查是否為重複的問卷 ID 或名稱
-            survey_query = self.db.collection('survey') \
+            survey_query = db.collection('survey') \
                 .where('projectId', '==', project_gsid) \
                 .where('unitId', '==', unit_gsid)\
                 .where('surveyName', '==', survey_info_dict['surveyName'])
             survey_query_dict = survey_query.query_to_dict(first=True)
 
-            if survey_query_dict:
+            if survey_query_dict and survey_query_dict['surveyId'] != gsid:
                 return '同專案下，問卷名稱重複，請輸入其他名稱！'
 
-            survey_query = self.db.collection('survey') \
+            survey_query = db.collection('survey') \
                 .where('projectId', '==', project_gsid) \
                 .where('unitId', '==', unit_gsid) \
                 .where('customSurveyId', '==', survey_info_dict['customSurveyId'])
             survey_query_dict = survey_query.query_to_dict(first=True)
 
-            if survey_query_dict:
+            if survey_query_dict and survey_query_dict['surveyId'] != gsid:
                 return '同專案下，自訂問卷 ID 重複，請輸入其他 ID！'
 
             # S_2 更新 Firestore
-            batch = self.db.batch()
+            batch = db.batch()
 
             # S_2-1 更新 Firestore: survey/{surveyId}
             # TAG Firestore SET
@@ -176,7 +182,7 @@ class Survey:
                 }
             }
             '''
-            survey_ref = self.db.document('survey', gsid)
+            survey_ref = db.document('survey', gsid)
             batch.set(survey_ref, survey_info_dict)
 
             # S_2-2 更新 Firestore: interviewerSurveyList/{interviewerId_projectId}
@@ -208,15 +214,15 @@ class Survey:
             for interviewer_id in interviewer_list:
                 survey_list_dict['interviewerId'] = interviewer_id
 
-                survey_list_ref = self.db.document('interviewerSurveyList', f'{interviewer_id}_{project_gsid}')
+                survey_list_ref = db.document('interviewerSurveyList', f'{interviewer_id}_{project_gsid}')
                 batch.set(survey_list_ref, survey_list_dict, merge=True)
 
                 interviewer_respondent_df = respondent_list_df[respondent_list_df.interviewerId == interviewer_id]
-                interviewer_respondent_df.drop(columns='interviewerId', inplace=True)
+                interviewer_respondent_df = interviewer_respondent_df.drop(columns='interviewerId')
                 respondent_list_dict['interviewerId'] = interviewer_id
                 respondent_list_dict['respondentList'] = interviewer_respondent_df.to_dict(orient='index')
 
-                respondent_list_ref = self.db.document('interviewerRespondentList', f'{interviewer_id}_{gsid}')
+                respondent_list_ref = db.document('interviewerRespondentList', f'{interviewer_id}_{gsid}')
                 batch.set(respondent_list_ref, respondent_list_dict, merge=True)
 
             # S_2-4 更新 Firestore: surveyQuestionList/{surveyId}
@@ -231,9 +237,9 @@ class Survey:
                 }
             }
             '''
-            translate_spreadsheet = self.gsheets.open_by_key('1nmZ2OVD3tfPoJSVjJK_jlHRrY3NYADCi7yv2GY0VV28')
+            translate_spreadsheet = gsheets.open_by_key('1nmZ2OVD3tfPoJSVjJK_jlHRrY3NYADCi7yv2GY0VV28')
             survey_question_dict = get_survey_question_dict(spreadsheet, survey_worksheet_name, translate_spreadsheet)
-            survey_question_ref = self.db.document('surveyQuestionList', gsid)
+            survey_question_ref = db.document('surveyQuestionList', gsid)
             batch.set(survey_question_ref, survey_question_dict)
 
             batch.commit()
@@ -288,6 +294,7 @@ def choice_row_to_df(row, regex):
     choice_df.reset_index(drop=True, inplace=True)
 
     choice_df['serialNumber'] = choice_df.index
+    choice_df.index = choice_df.index.map(str)
 
     choice_df['asNote'] = False
     choice_df.loc[choice_df.choiceId.isin(force_to_str_list(row['choice_as_note'])), 'asNote'] = True
@@ -308,6 +315,7 @@ def choice_import_to_df(choice_import, spreadsheet, translate_df):
                                               translate_df[translate_df.appear == 'choice_cols'])
 
     choice_import_df['serialNumber'] = choice_import_df.index
+    choice_import_df.index = choice_import_df.index.map(str)
 
     if 'asNote' in choice_import_df.columns:
         choice_import_df['asNote'] = choice_import_df.asNote == '1'
@@ -357,6 +365,7 @@ def get_survey_question_dict(spreadsheet, survey_worksheet_name, translate_sprea
     # TODO question_layer
     survey_question_dict = {}
     for i, row in question_list_df.iterrows():
+        i = str(i)
         survey_question_dict[i] = row.filter(regex='^((?!_).)*$').to_dict()
 
         if row['questionType'] in ['single', 'multiple', 'popupSingle', 'popupMultiple']:
