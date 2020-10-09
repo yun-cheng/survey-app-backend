@@ -1,7 +1,7 @@
 from common import *
 
 
-class Unit:
+class Team:
     def __init__(self, gsheets, db):
         self.gsheets = gsheets
         self.db = db
@@ -28,11 +28,11 @@ class Unit:
 
             # S_1-5 '更新此單位設定' 連結
             worksheet = spreadsheet.worksheet_by_title('說明')
-            update_url = f'{main_url}?action=update&on=unit&gsid={gsid}'
+            update_url = f'{main_url}?action=update&on=team&gsid={gsid}'
             worksheet.update_value('A3', f'=HYPERLINK("{update_url}", "更新此單位設定")')
 
             # S_1-6 '刪除此單位' 連結
-            delete_url = f'{main_url}?action=delete&on=unit&gsid={gsid}'
+            delete_url = f'{main_url}?action=delete&on=team&gsid={gsid}'
             worksheet.update_value('A4', f'=HYPERLINK("{delete_url}", "刪除此單位")')
 
             # S_1-7 設定分享權限
@@ -54,67 +54,67 @@ class Unit:
             spreadsheet = self.gsheets.open_by_key(gsid)
 
             # S_1-2 提取資訊
-            unit_info = spreadsheet.worksheet_by_title('單位資訊') \
+            team_info = spreadsheet.worksheet_by_title('單位資訊') \
                 .get_values(start='C2', end='C3', include_all=True)
 
-            unit_info_dict = {
-                'unitId': gsid,
-                'customUnitId': unit_info[0][0],
-                'unitName': unit_info[1][0]
+            team_info_dict = {
+                'teamId': gsid,
+                'customTeamId': team_info[0][0],
+                'teamName': team_info[1][0]
             }
 
             # S_1-3 檢查輸入的內容是否符合格式
             # S_1-3-1 檢查是否為空
-            for k, v in unit_info_dict.items():
+            for k, v in team_info_dict.items():
                 if not v:
                     return '單位資訊不能為空!'
 
             # S_1-3-2 檢查是否為重複的單位 ID 或名稱
-            unit_list_ref = self.db.document('unitList', 'unitList')
-            unit_list_dict = unit_list_ref.doc_to_dict()
+            team_list_ref = self.db.document('teamList', 'teamList')
+            team_list_dict = team_list_ref.doc_to_dict()
 
-            if unit_list_dict:
-                for k, v in unit_list_dict.items():
+            if team_list_dict:
+                for k, v in team_list_dict.items():
                     if k != gsid:
-                        if v['customUnitId'] == unit_info_dict['customUnitId']:
+                        if v['customTeamId'] == team_info_dict['customTeamId']:
                             return '單位 ID 重複，請輸入其他 ID！'
-                        elif v['unitName'] == unit_info_dict['unitName']:
+                        elif v['teamName'] == team_info_dict['teamName']:
                             return '單位名稱重複，請輸入其他名稱！'
 
             # S_2 更新 Firestore
             batch = self.db.batch()
 
-            # S_2-1 更新 Firestore: unit 本身的資料
-            # S_2-1-1 更新 Firestore: unit/{unitId}
+            # S_2-1 更新 Firestore: team 本身的資料
+            # S_2-1-1 更新 Firestore: team/{teamId}
             # TAG Firestore SET
             # EXAMPLE
             '''
-            unit / {unitId} / {
-                unitId: '1VRGeK8m-w_ZCjg1SDQ74TZ7jpHsRiTiI3AcD54I5FC8',
-                customUnitId: 'demo_unit_id',
-                unitName: '範例單位名稱'
+            team / {teamId} / {
+                teamId: '1VRGeK8m-w_ZCjg1SDQ74TZ7jpHsRiTiI3AcD54I5FC8',
+                customTeamId: 'demo_team_id',
+                teamName: '範例單位名稱'
             }
             '''
-            unit_ref = self.db.document('unit', gsid)
-            batch.set(unit_ref, unit_info_dict)
+            team_ref = self.db.document('team', gsid)
+            batch.set(team_ref, team_info_dict)
 
-            # S_2-1-2 更新 Firestore: unitList/unitList
+            # S_2-1-2 更新 Firestore: teamList/teamList
             # TAG Firestore UPDATE
             # EXAMPLE
             '''
-            unitList / unitList / {
-                {unitId}: (unit data)
+            teamList / teamList / {
+                {teamId}: (team data)
             }
             '''
-            batch.set(unit_list_ref, {
-                gsid: unit_info_dict
+            batch.set(team_list_ref, {
+                gsid: team_info_dict
             }, merge=True)
 
-            # S_2-1-3 更新 Firestore: interviewerList/{unitId}
+            # S_2-1-3 更新 Firestore: interviewerList/{teamId}
             # TAG Firestore SET
             # EXAMPLE
             '''
-            interviewerList / {unitId} / {
+            interviewerList / {teamId} / {
                 {interviewerId}: {
                     interviewerId: 'id001',
                     interviewerPassword: 'password001',
@@ -155,7 +155,7 @@ class Unit:
             # S_2-2-1-3 刪除的 interviewer
             # TAG Firestore DELETE
             interviewer_quiz_docs = self.db.collection('interviewerQuiz') \
-                .where('unitId', '==', gsid) \
+                .where('teamId', '==', gsid) \
                 .stream()
 
             for doc in interviewer_quiz_docs:
@@ -174,20 +174,20 @@ class Unit:
         try:
             batch = self.db.batch()
 
-            # S_1 刪除 Firestore: unit 本身的資料
-            # S_1-1 刪除 Firestore: unit/{unitId}
+            # S_1 刪除 Firestore: team 本身的資料
+            # S_1-1 刪除 Firestore: team/{teamId}
             # TAG Firestore DELETE
-            unit_ref = self.db.document('unit', gsid)
-            batch.delete(unit_ref)
+            team_ref = self.db.document('team', gsid)
+            batch.delete(team_ref)
 
-            # S_1-2 刪除 Firestore: unitList/unitList
+            # S_1-2 刪除 Firestore: teamList/teamList
             # TAG Firestore UPDATE
-            unit_list_ref = self.db.document('unitList', 'unitList')
-            batch.set(unit_list_ref, {
+            team_list_ref = self.db.document('teamList', 'teamList')
+            batch.set(team_list_ref, {
                 gsid: firestore.DELETE_FIELD
             }, merge=True)
 
-            # S_1-3 刪除 Firestore: interviewerList/{unitId}
+            # S_1-3 刪除 Firestore: interviewerList/{teamId}
             # TAG Firestore DELETE
             interviewer_list_ref = self.db.document('interviewerList', gsid)
             batch.delete(interviewer_list_ref)
@@ -196,13 +196,13 @@ class Unit:
             # S_2-1 刪除 Firestore: project/{projectId}
             # TAG Firestore DELETE
             project_docs = self.db.collection('project') \
-                .where('unitId', '==', gsid) \
+                .where('teamId', '==', gsid) \
                 .stream()
 
             for doc in project_docs:
                 batch.delete(doc.reference)
 
-            # S_2-2 刪除 Firestore: projectList/{unitId}
+            # S_2-2 刪除 Firestore: projectList/{teamId}
             # TAG Firestore DELETE
             project_list_ref = self.db.document('projectList', gsid)
             batch.delete(project_list_ref)
@@ -210,13 +210,13 @@ class Unit:
             # S_2-3 刪除 Firestore: quiz/{quizId}
             # TAG Firestore DELETE
             quiz_docs = self.db.collection('quiz') \
-                .where('unitId', '==', gsid) \
+                .where('teamId', '==', gsid) \
                 .stream()
 
             for doc in quiz_docs:
                 batch.delete(doc.reference)
 
-            # S_2-4 刪除 Firestore: quizList/{unitId}
+            # S_2-4 刪除 Firestore: quizList/{teamId}
             # TAG Firestore DELETE
             quiz_list_ref = self.db.document('quizList', gsid)
             batch.delete(quiz_list_ref)
@@ -224,7 +224,7 @@ class Unit:
             # S_2-5 刪除 Firestore: interviewerQuiz/{interviewerId_projectId}
             # TAG Firestore DELETE
             interviewer_quiz_docs = self.db.collection('interviewerQuiz') \
-                .where('unitId', '==', gsid) \
+                .where('teamId', '==', gsid) \
                 .stream()
 
             for doc in interviewer_quiz_docs:

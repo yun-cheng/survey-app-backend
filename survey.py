@@ -72,7 +72,7 @@ class Survey:
                 'surveyName': survey_info[0][0],
                 'customSurveyId': survey_info[1][0],
                 'customProjectId': survey_info[2][0],
-                'customUnitId': survey_info[3][0],
+                'customTeamId': survey_info[3][0],
                 'customInHouseSamplingId': survey_info[6][0],
                 'customVisitAddressId': survey_info[7][0],
                 'surveyType': 'main',
@@ -92,20 +92,20 @@ class Survey:
                 return '問卷資訊不能為空!'
 
             # S_1-3-2 檢查連結的單位 ID、專案 ID、問卷模組 ID 是否存在
-            unit_query = db.collection('unit') \
-                .where('customUnitId', '==', survey_info_dict['customUnitId'])
-            unit_dict = unit_query.query_to_dict(first=True)
+            team_query = db.collection('team') \
+                .where('customTeamId', '==', survey_info_dict['customTeamId'])
+            team_dict = team_query.query_to_dict(first=True)
 
-            if unit_dict:
-                unit_gsid = unit_dict['unitId']
-                survey_info_dict['unitId'] = unit_gsid
-                survey_info_dict.pop('customUnitId')
+            if team_dict:
+                team_gsid = team_dict['teamId']
+                survey_info_dict['teamId'] = team_gsid
+                survey_info_dict.pop('customTeamId')
             else:
                 return '找不到連結的單位 ID！'
 
             project_query = db.collection('project') \
                 .where('customProjectId', '==', survey_info_dict['customProjectId'])\
-                .where('unitId', '==', unit_gsid)
+                .where('teamId', '==', team_gsid)
             project_query_dict = project_query.query_to_dict(first=True)
 
             if project_query_dict:
@@ -146,7 +146,7 @@ class Survey:
             # S_1-3-3 檢查是否為重複的問卷 ID 或名稱
             survey_query = db.collection('survey') \
                 .where('projectId', '==', project_gsid) \
-                .where('unitId', '==', unit_gsid)\
+                .where('teamId', '==', team_gsid)\
                 .where('surveyName', '==', survey_info_dict['surveyName'])
             survey_query_dict = survey_query.query_to_dict(first=True)
 
@@ -155,7 +155,7 @@ class Survey:
 
             survey_query = db.collection('survey') \
                 .where('projectId', '==', project_gsid) \
-                .where('unitId', '==', unit_gsid) \
+                .where('teamId', '==', team_gsid) \
                 .where('customSurveyId', '==', survey_info_dict['customSurveyId'])
             survey_query_dict = survey_query.query_to_dict(first=True)
 
@@ -174,7 +174,7 @@ class Survey:
                 customSurveyId: 'demo_survey_id',
                 surveyName: '範例問卷名稱',
                 projectId: '1u1NdL7ZND_E3hU1jS2SNhhDIluIuHrcHpG4W9XyUChQ',
-                unitId: '1VRGeK8m-w_ZCjg1SDQ74TZ7jpHsRiTiI3AcD54I5FC8',
+                teamId: '1VRGeK8m-w_ZCjg1SDQ74TZ7jpHsRiTiI3AcD54I5FC8',
                 surveyType: 'main',
                 module: {
                     visitAddressId: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
@@ -190,7 +190,7 @@ class Survey:
             # TAG Firestore UPDATE
             survey_list_dict = {
                 'projectId': project_gsid,
-                'unitId': unit_gsid,
+                'teamId': team_gsid,
                 'surveyList': {
                     gsid: {
                         'surveyId': gsid,
@@ -202,7 +202,7 @@ class Survey:
             respondent_list_dict = {
                 'surveyId': gsid,
                 'projectId': project_gsid,
-                'unitId': unit_gsid,
+                'teamId': team_gsid,
                 'respondentList': {}
             }
 
@@ -230,17 +230,21 @@ class Survey:
             # EXAMPLE
             '''
             surveyQuestionList / {surveyId} / {
-                {questionId}: {
-                    questionId: '1',
+                {serialNumber}: {
+                    serialNumber: 0,
+                    questionId : 'A1',
                     questionBody: 'Question 1',
-                    answer: 'O'
+                    questionNote: '',
+                    questionType: 'single',
                 }
             }
             '''
             translate_spreadsheet = gsheets.open_by_key('1nmZ2OVD3tfPoJSVjJK_jlHRrY3NYADCi7yv2GY0VV28')
-            survey_question_dict = get_survey_question_dict(spreadsheet, survey_worksheet_name, translate_spreadsheet)
+            survey_question_list = get_survey_question_list(spreadsheet, survey_worksheet_name, translate_spreadsheet)
             survey_question_ref = db.document('surveyQuestionList', gsid)
-            batch.set(survey_question_ref, survey_question_dict)
+            batch.set(survey_question_ref, {
+                'list': survey_question_list
+            })
 
             batch.commit()
 
@@ -336,7 +340,7 @@ def choice_import_to_df(choice_import, spreadsheet, translate_df):
     return choice_import_df
 
 
-def get_survey_question_dict(spreadsheet, survey_worksheet_name, translate_spreadsheet):
+def get_survey_question_list(spreadsheet, survey_worksheet_name, translate_spreadsheet):
     translate_df = get_worksheet_df(translate_spreadsheet, worksheet_title='命名對照')
     translate_df = translate_df.iloc[:, 0:3]
     translate_df.columns = ['appear', 'chinese', 'english']
@@ -361,30 +365,38 @@ def get_survey_question_dict(spreadsheet, survey_worksheet_name, translate_sprea
     }
     question_list_df['questionType'] = question_list_df.questionType.map(question_type_recoder)
 
+    question_list_df['hideQuestionId'] = question_list_df.hideQuestionId == '1'
+    question_list_df['pageNumber'] = question_list_df.pageNumber.map(int)
+    question_list_df['serialNumber'] = question_list_df.index
+
     # NOTE
     # TODO question_layer
-    survey_question_dict = {}
+    survey_question_list = []
     for i, row in question_list_df.iterrows():
-        i = str(i)
-        survey_question_dict[i] = row.filter(regex='^((?!_).)*$').to_dict()
+        question_dict = row.filter(regex='^((?!_).)*$').to_dict()
 
         if row['questionType'] in ['single', 'multiple', 'popupSingle', 'popupMultiple']:
 
             if row['choice_import']:
                 choice_import_df = choice_import_to_df(row['choice_import'], spreadsheet, translate_df)
-                survey_question_dict[i]['choiceList'] = choice_import_df.to_dict(orient='index')
+                question_dict['choiceList'] = choice_import_df.to_dict('records')
 
             else:
                 choice_df = choice_row_to_df(row, regex='choice_id_')
-                survey_question_dict[i]['choiceList'] = choice_df.to_dict(orient='index')
+                question_dict['choiceList'] = choice_df.to_dict('records')
+        else:
+            question_dict['choiceList'] = []
 
         # NOTE special answer
         special_answer_df = choice_row_to_df(row, regex='special_answer_')
 
         if not special_answer_df.empty:
-            survey_question_dict[i]['specialAnswerList'] = special_answer_df.to_dict(orient='index')
-            survey_question_dict[i]['hasSpecialAnswer'] = True
+            question_dict['specialAnswerList'] = special_answer_df.to_dict('records')
+            question_dict['hasSpecialAnswer'] = True
         else:
-            survey_question_dict[i]['hasSpecialAnswer'] = False
+            question_dict['hasSpecialAnswer'] = False
+            question_dict['specialAnswerList'] = []
 
-    return survey_question_dict
+        survey_question_list.append(question_dict)
+
+    return survey_question_list

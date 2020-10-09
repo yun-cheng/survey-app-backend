@@ -34,7 +34,7 @@ class Project:
             worksheet.update_value('A3', f'=HYPERLINK("{update_url}", "更新此專案設定")')
 
             # S_1-6 '刪除此專案' 連結
-            delete_url = f'{main_url}?action=delete&on=unit&gsid={gsid}'
+            delete_url = f'{main_url}?action=delete&on=team&gsid={gsid}'
             worksheet.update_value('A4', f'=HYPERLINK("{delete_url}", "刪除此專案")')
 
             # S_1-7 設定分享權限
@@ -63,7 +63,7 @@ class Project:
                 'projectId': gsid,
                 'customProjectId': project_info[0][0],
                 'projectName': project_info[1][0],
-                'customUnitId': project_info[2][0],
+                'customTeamId': project_info[2][0],
             }
 
             # S_1-3 檢查輸入的內容是否符合格式
@@ -73,22 +73,22 @@ class Project:
                     return '專案資訊不能為空!'
 
             # S_1-3-2 檢查連結的單位 ID 是否存在
-            unit_list_ref = self.db.document('unitList', 'unitList')
-            unit_list_dict = unit_list_ref.doc_to_dict()
+            team_list_ref = self.db.document('teamList', 'teamList')
+            team_list_dict = team_list_ref.doc_to_dict()
 
-            if unit_list_dict:
-                for k, v in unit_list_dict.items():
-                    if v['customUnitId'] == project_info_dict['customUnitId']:
-                        project_info_dict['unitId'] = k
-                        unit_gsid = k
-                        project_info_dict.pop('customUnitId')
+            if team_list_dict:
+                for k, v in team_list_dict.items():
+                    if v['customTeamId'] == project_info_dict['customTeamId']:
+                        project_info_dict['teamId'] = k
+                        team_gsid = k
+                        project_info_dict.pop('customTeamId')
                         break
 
-            if not unit_gsid:
+            if not team_gsid:
                 return '找不到連結的單位 ID！'
 
             # S_1-3-3 檢查是否為重複的專案 ID 或名稱
-            project_list_ref = self.db.document('projectList', unit_gsid)
+            project_list_ref = self.db.document('projectList', team_gsid)
             project_list_dict = project_list_ref.doc_to_dict()
 
             if project_list_dict:
@@ -110,17 +110,17 @@ class Project:
                 projectId: '1u1NdL7ZND_E3hU1jS2SNhhDIluIuHrcHpG4W9XyUChQ',
                 customProjectId: 'demo_project_id',
                 projectName: '範例專案',
-                unitId: '1VRGeK8m-w_ZCjg1SDQ74TZ7jpHsRiTiI3AcD54I5FC8'
+                teamId: '1VRGeK8m-w_ZCjg1SDQ74TZ7jpHsRiTiI3AcD54I5FC8'
             }
             '''
             project_ref = self.db.document('project', gsid)
             batch.set(project_ref, project_info_dict)
 
-            # S_2-2 更新 Firestore: projectList/{unitId}
+            # S_2-2 更新 Firestore: projectList/{teamId}
             # TAG Firestore UPDATE
             # EXAMPLE
             '''
-            project_list / {unitId} / {
+            project_list / {teamId} / {
                 {projectId}: (project data)
             }
             '''
@@ -144,25 +144,25 @@ class Project:
             # TAG Firestore DELETE
             project_ref = self.db.document('project', gsid)
             project_dict = project_ref.doc_to_dict()
-            unit_gsid = project_dict['unitId']
+            team_gsid = project_dict['teamId']
             batch.delete(project_ref)
 
-            # S_1-2 刪除 Firestore: projectList/{unitId}
+            # S_1-2 刪除 Firestore: projectList/{teamId}
             # TAG Firestore UPDATE
-            project_list_ref = self.db.document('projectList', unit_gsid)
+            project_list_ref = self.db.document('projectList', team_gsid)
             batch.set(project_list_ref, {
                 gsid: firestore.DELETE_FIELD
             }, merge=True)
 
             # S_2 刪除 Firestore: 相關聯的資料
-            # S_2-1 刪除 quizList/{unitId}
+            # S_2-1 刪除 Firestore: quizList/{teamId}
             # TAG Firestore UPDATE
-            quiz_list_ref = self.db.document('quizList', unit_gsid)
+            quiz_list_ref = self.db.document('quizList', team_gsid)
             batch.set(quiz_list_ref, {
                 gsid: firestore.DELETE_FIELD
             }, merge=True)
 
-            # S_2-2 刪除 quiz/{quizId}
+            # S_2-2 刪除 Firestore: quiz/{quizId}
             # TAG Firestore DELETE
             quiz_docs = self.db.collection('quiz') \
                 .where('projectId', '==', gsid) \
@@ -171,7 +171,7 @@ class Project:
             for doc in quiz_docs:
                 batch.delete(doc.reference)
 
-            # S_2-3 刪除 interviewerQuiz/{interviewerId_projectId}
+            # S_2-3 刪除 Firestore: interviewerQuiz/{interviewerId_projectId}
             # TAG Firestore DELETE
             interviewer_quiz_docs = self.db.collection('interviewerQuiz') \
                 .where('projectId', '==', gsid) \

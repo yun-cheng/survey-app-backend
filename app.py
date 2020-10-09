@@ -1,6 +1,6 @@
 
 from load_credentials import *
-from unit import Unit
+from team import Team
 from project import Project
 from quiz import Quiz
 from survey import Survey
@@ -25,8 +25,8 @@ def main():
     db = load_firestore()
 
     # H_3 action
-    if on == 'unit':
-        target = Unit(gsheets=gsheets, db=db)
+    if on == 'team':
+        target = Team(gsheets=gsheets, db=db)
     elif on == 'project':
         target = Project(gsheets=gsheets, db=db)
     elif on == 'quiz':
