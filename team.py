@@ -51,7 +51,9 @@ class Team:
     def update(self, gsid):
         try:
             # S_1-1 連接 spreadsheet
-            spreadsheet = self.gsheets.open_by_key(gsid)
+            gsheets = self.gsheets
+            db = self.db
+            spreadsheet = gsheets.open_by_key(gsid)
 
             # S_1-2 提取資訊
             team_info = spreadsheet.worksheet_by_title('單位資訊') \
@@ -70,19 +72,24 @@ class Team:
                     return '單位資訊不能為空!'
 
             # S_1-3-2 檢查是否為重複的單位 ID 或名稱
-            team_list_ref = self.db.document('teamList', 'teamList')
-            team_list_dict = team_list_ref.doc_to_dict()
+            team_query = db.collection('team') \
+                .where('teamId', '==', team_info_dict['teamId']) \
+                .limit(1)
+            team_query_dict = team_query.query_to_dict(first=True)
 
-            if team_list_dict:
-                for k, v in team_list_dict.items():
-                    if k != gsid:
-                        if v['customTeamId'] == team_info_dict['customTeamId']:
-                            return '單位 ID 重複，請輸入其他 ID！'
-                        elif v['teamName'] == team_info_dict['teamName']:
-                            return '單位名稱重複，請輸入其他名稱！'
+            if team_query_dict and team_query_dict['teamId'] != gsid:
+                return '自訂單位 ID 重複，請輸入其他 ID！'
+
+            team_query = db.collection('team') \
+                .where('teamName', '==', team_info_dict['teamName']) \
+                .limit(1)
+            team_query_dict = team_query.query_to_dict(first=True)
+
+            if team_query_dict and team_query_dict['teamId'] != gsid:
+                return '自訂單位名稱重複，請輸入其他名稱！'
 
             # S_2 更新 Firestore
-            batch = self.db.batch()
+            batch = db.batch()
 
             # S_2-1 更新 Firestore: team 本身的資料
             # S_2-1-1 更新 Firestore: team/{teamId}
@@ -95,20 +102,8 @@ class Team:
                 teamName: '範例單位名稱'
             }
             '''
-            team_ref = self.db.document('team', gsid)
+            team_ref = db.document('team', gsid)
             batch.set(team_ref, team_info_dict)
-
-            # S_2-1-2 更新 Firestore: teamList/teamList
-            # TAG Firestore UPDATE
-            # EXAMPLE
-            '''
-            teamList / teamList / {
-                {teamId}: (team data)
-            }
-            '''
-            batch.set(team_list_ref, {
-                gsid: team_info_dict
-            }, merge=True)
 
             # S_2-1-3 更新 Firestore: interviewerList/{teamId}
             # TAG Firestore SET
@@ -123,38 +118,49 @@ class Team:
             }
             '''
             interviewer_list_df = get_worksheet_df(spreadsheet, worksheet_title='訪員帳號', end='C')
-            interviewer_list_dict = df_to_dict(interviewer_list_df,
-                                               new_column_names=['interviewerId', 'interviewerPassword', 'interviewerName'],
-                                               index_column='interviewerId')
+            interviewer_map = df_to_dict(interviewer_list_df,
+                                         new_column_names=['interviewerId', 'interviewerPassword', 'interviewerName'],
+                                         index_column='interviewerId')
 
-            interviewer_list_ref = self.db.document('interviewerList', gsid)
+            interviewer_list = [v for k, v in interviewer_map.items()]
+
+            interviewer_map_ref = db.document('interviewerMap', gsid)
             # NOTE 後面要使用
-            old_interviewer_list_dict = interviewer_list_ref.doc_to_dict()
-            batch.set(interviewer_list_ref, interviewer_list_dict)
+            old_interviewer_map = {}
+            old_interviewer_map = interviewer_map_ref.doc_to_dict()
+            batch.set(interviewer_map_ref, interviewer_map)
+
+            interviewer_list_ref = db.document('interviewerList', gsid)
+            batch.set(interviewer_list_ref, {'list': interviewer_list})
 
             # S_2-2 更新 Firestore: 相關聯的資料
             # S_2-2-1 更新 Firestore: interviewerQuiz/{interviewerId_projectId}
             # S_2-2-1-1 interviewer_id 的增減
-            old_interviewer_id_list = list(old_interviewer_list_dict.keys())
-            new_interviewer_id_list = list(interviewer_list_dict.keys())
-            add_interviewer_id_list = list(set(new_interviewer_id_list) - set(old_interviewer_id_list))
-            delete_interviewer_id_list = list(set(old_interviewer_id_list) - set(new_interviewer_id_list))
+            new_interviewer_id_list = list(interviewer_map.keys())
+
+            if old_interviewer_map:
+                old_interviewer_id_list = list(old_interviewer_map.keys())
+                add_interviewer_id_list = list(set(new_interviewer_id_list) - set(old_interviewer_id_list))
+                delete_interviewer_id_list = list(set(old_interviewer_id_list) - set(new_interviewer_id_list))
+            else:
+                add_interviewer_id_list = new_interviewer_id_list
+                delete_interviewer_id_list = []
 
             # S_2-2-1-2 新增的 interviewer
             # TAG Firestore SET
-            quiz_list_ref = self.db.document('quizList', gsid)
+            quiz_list_ref = db.document('quizList', gsid)
             quiz_list_dict = quiz_list_ref.doc_to_dict()
 
             for interviewer_id in add_interviewer_id_list:
                 if quiz_list_dict:
-                    for project_gsid, interviewer_quiz_dict in quiz_list_dict:
+                    for project_gsid, interviewer_quiz_dict in quiz_list_dict.items():
                         interviewer_quiz_dict['interviewerId'] = interviewer_id
-                        interviewer_quiz_ref = self.db.document('interviewerQuiz', f'{interviewer_id}_{project_gsid}')
+                        interviewer_quiz_ref = db.document('interviewerQuiz', f'{interviewer_id}_{project_gsid}')
                         batch.set(interviewer_quiz_ref, interviewer_quiz_dict)
 
             # S_2-2-1-3 刪除的 interviewer
             # TAG Firestore DELETE
-            interviewer_quiz_docs = self.db.collection('interviewerQuiz') \
+            interviewer_quiz_docs = db.collection('interviewerQuiz') \
                 .where('teamId', '==', gsid) \
                 .stream()
 
