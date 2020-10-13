@@ -4,6 +4,7 @@ from team import Team
 from project import Project
 from quiz import Quiz
 from survey import Survey
+from survey_module import SurveyModule
 
 app = Flask(__name__)
 
@@ -33,6 +34,8 @@ def main():
         target = Quiz(gsheets=gsheets, db=db)
     elif on == 'survey':
         target = Survey(gsheets=gsheets, db=db)
+    elif on == 'survey_module':
+        target = SurveyModule(gsheets=gsheets, db=db)
 
     if on:
         if action == 'create' and email:
