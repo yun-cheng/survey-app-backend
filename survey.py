@@ -86,17 +86,11 @@ class Survey:
             'customVisitAddressId': survey_info[7][0]
         }
 
-        survey_dict = {
-            'surveyId': gsid,
-            'customSurveyId': survey_info_dict['customSurveyId'],
-            'surveyName': survey_info_dict['surveyName'],
-            'module': {
-                'visitAddress': [],
-                'inHouseSampling': []
-            },
-            'interviewerList': [],
-            'questionList': []
-        }
+        survey_dict = {}
+        survey_dict['surveyId'] = gsid
+        survey_dict['customSurveyId'] = survey_info_dict['customSurveyId']
+        survey_dict['surveyName'] = survey_info_dict['surveyName']
+        survey_dict['module'] = defaultdict(dict)
 
         # S_1-3 檢查輸入的內容是否符合格式
         # S_1-3-1 檢查是否為空
@@ -196,16 +190,22 @@ class Survey:
         # NOTE
         self.get_translate_df()
 
-        survey_question_list = self.get_survey_question_list(spreadsheet, survey_info_dict['surveyWorksheetName'])
-        survey_dict['questionList'] = survey_question_list
+        survey_dict['questionList'], \
+        survey_dict['initialAnswerList'], \
+        survey_dict['initialAnswerStatusList'] = \
+            self.get_survey_question_list(spreadsheet, survey_info_dict['surveyWorksheetName'])
 
         if visit_address_gsid:
-            visit_address_question_list = self.get_survey_module_question_list(visit_address_gsid)
-            survey_dict['module']['visitAddress'] = visit_address_question_list
+            survey_dict['module']['visitAddress']['questionList'], \
+            survey_dict['module']['visitAddress']['initialAnswerList'], \
+            survey_dict['module']['visitAddress']['initialAnswerStatusList'] = \
+                self.get_survey_module_question_list(visit_address_gsid)
 
         if in_house_sampling_gsid:
-            in_house_sampling_question_list = self.get_survey_module_question_list(in_house_sampling_gsid)
-            survey_dict['module']['inHouseSampling'] = in_house_sampling_question_list
+            survey_dict['module']['inHouseSampling']['questionList'], \
+            survey_dict['module']['inHouseSampling']['initialAnswerList'], \
+            survey_dict['module']['inHouseSampling']['initialAnswerStatusList'] = \
+                self.get_survey_module_question_list(in_house_sampling_gsid)
 
         # S_3-2-2 更新
         survey_ref = db.document('survey', gsid)
@@ -298,37 +298,28 @@ class Survey:
         question_list_df['pageNumber'] = question_list_df.pageNumber.map(int)
         question_list_df['serialNumber'] = question_list_df.index
 
+        # S_ 驗證 questionId 唯一
+        assert(all(question_list_df.questionId != ''))
+        assert(len(question_list_df.questionId) == question_list_df.questionId.nunique())
+
         # NOTE
         # TODO question_layer
-        survey_question_list = []
-        for i, row in question_list_df.iterrows():
-            question_dict = row.filter(regex='^((?!_).)*$').to_dict()
+        # TODO 驗證 choiceId 唯一
+        question_list_df['choiceList'], \
+        question_list_df['hasSpecialAnswer'], \
+        question_list_df['specialAnswerList'], \
+        initialAnswerList, initialAnswerStatusList = zip(*question_list_df.apply(
+            self.create_choice_list, spreadsheet=spreadsheet, axis=1))
 
-            if row['questionType'] in ['single', 'multiple', 'popupSingle', 'popupMultiple']:
+        survey_question_list = question_list_df.to_dict('records')
+        initialAnswerList = {i['questionId']: i for i in initialAnswerList}
+        initialAnswerStatusList = {i['questionId']: i for i in initialAnswerStatusList}
 
-                if row['choice_import']:
-                    choice_import_df = self.choice_import_to_df(spreadsheet, row['choice_import'])
-                    question_dict['choiceList'] = choice_import_df.to_dict('records')
+        # S_ showQuestion, validateAnswer
+        question_list_df['showQuestion'] = question_list_df.apply(reformat_expression, column='showQuestion', axis=1)
+        question_list_df['validateAnswer'] = question_list_df.apply(reformat_expression, column='validateAnswer', axis=1)
 
-                else:
-                    choice_df = choice_row_to_df(row, regex='choice_id_')
-                    question_dict['choiceList'] = choice_df.to_dict('records')
-            else:
-                question_dict['choiceList'] = []
-
-            # NOTE special answer
-            special_answer_df = choice_row_to_df(row, regex='special_answer_')
-
-            if not special_answer_df.empty:
-                question_dict['specialAnswerList'] = special_answer_df.to_dict('records')
-                question_dict['hasSpecialAnswer'] = True
-            else:
-                question_dict['hasSpecialAnswer'] = False
-                question_dict['specialAnswerList'] = []
-
-            survey_question_list.append(question_dict)
-
-        return survey_question_list
+        return survey_question_list, initialAnswerList, initialAnswerStatusList
 
     def choice_import_to_df(self, spreadsheet, choice_import):
         translate_df = self.translate_df
@@ -365,6 +356,52 @@ class Survey:
         survey_worksheet_name = spreadsheet.worksheet_by_title('問卷模組資訊').get_value('C6')
 
         return self.get_survey_question_list(spreadsheet, survey_worksheet_name)
+
+    def create_choice_list(self, row, spreadsheet):
+        if row['questionType'] in ['single', 'multiple', 'popupSingle', 'popupMultiple']:
+
+            if row['choice_import']:
+                choice_import_df = self.choice_import_to_df(spreadsheet, row['choice_import'])
+                choiceList = choice_import_df.to_dict('records')
+
+            else:
+                choice_df = choice_row_to_df(row, regex='choice_id_')
+                choiceList = choice_df.to_dict('records')
+
+        else:
+            choiceList = []
+
+        # H_ special answer
+        special_answer_df = choice_row_to_df(row, regex='special_answer_')
+
+        if not special_answer_df.empty:
+            specialAnswerList = special_answer_df.to_dict('records')
+            hasSpecialAnswer = True
+        else:
+            hasSpecialAnswer = False
+            specialAnswerList = []
+
+        # H_ answer, answerStatus
+        if row['showQuestion'] == '':
+            answerStatusType = 'unanswered'
+        else:
+            answerStatusType = 'hidden'
+
+        answer = {
+            'questionId': row['questionId'],
+            'serialNumber': row['serialNumber'],
+            'answerBody': '',
+            'noteMap': {}
+        }
+
+        answer_status = {
+            'questionId': row['questionId'],
+            'serialNumber': row['serialNumber'],
+            'answerStatusType': answerStatusType,
+            'noteMap': {}
+        }
+
+        return choiceList, hasSpecialAnswer, specialAnswerList, answer, answer_status
 
 
 def translate_cols(cols, translate_df):
@@ -423,3 +460,70 @@ def choice_row_to_df(row, regex):
     choice_df['upperChoiceId'] = ''
 
     return choice_df
+
+
+def reformat_expression(row, column):
+    full_expression = row[column]
+    # S_1 去空格
+    full_expression = full_expression.replace(' ', '')
+    # S_2 切開並保留分隔符號
+    full_expression = re.split('(\||\&|\(|\))', full_expression)
+    element_list = [i for i in full_expression if i != '']
+
+    full_expression_body = ''
+    expression_dict = {}
+    letters = string.ascii_uppercase
+    i = 0
+
+    for element in element_list:
+        if element in ['(', ')']:
+            full_expression_body += element
+        elif element in ['|', '&']:
+            full_expression_body += element * 2
+        else:
+            split_element = re.split('(!=|==|>=|<=|>|<|notin|in|notcontainsany|containsany|'
+                                     'notcontainsall|containsall|notcontains|contains|istype)', element)
+
+            expression_id = letters[i]
+            question_id = split_element[0]
+            operator = split_element[1]
+            value = split_element[2]
+
+            if question_id == 'ANS':
+                question_id = row['questionId']
+
+            recorder = {
+                '==': 'isEqualTo',
+                '!=':'notEqualTo',
+                '>=':'isGreaterThanOrEqualTo',
+                '<=':'isLessThanOrEqualTo',
+                '>':'isGreaterThan',
+                '<':'isLessThan',
+                'in':'isIn',
+                'notin':'notIn',
+                'contains':'contains',
+                'notcontains':'notContains',
+                'containsany':'containsAny',
+                'notcontainsany':'notContainsAny',
+                'containsall':'containsAll',
+                'notcontainsall':'notContainsAll',
+                'istype': 'isType'
+            }
+            operator = recorder.get(operator, '')
+
+            full_expression_body += expression_id
+            i += 1
+
+            expression_dict[expression_id] = {
+                'field': question_id,
+                operator: ast.literal_eval(value)  # TODO try catch
+            }
+
+    result = {
+        'fullExpressionBody': full_expression_body,
+        'expressionMap': expression_dict
+    }
+
+    return result
+
+
