@@ -14,4 +14,4 @@ steps:
   env:
     - 'ENV=dev'
 images:
-- gcr.io/survey-b59b0/interviewer-quiz:$COMMIT_SHA
+- 'gcr.io/survey-b59b0/interviewer-quiz:$COMMIT_SHA'
