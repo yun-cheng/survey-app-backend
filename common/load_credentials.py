@@ -1,5 +1,5 @@
 
-from common import *
+from .common import *
 
 
 def load_gsheets():

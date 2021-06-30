@@ -10,6 +10,7 @@ from dateutil.parser import parse
 import firebase_admin
 import pygsheets
 import pandas as pd
+import numpy as np
 from firebase_admin import credentials
 from firebase_admin import firestore
 from flask import Flask, request

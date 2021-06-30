@@ -1,52 +1,16 @@
-from common import *
+from common.common import *
 
 
 class Team:
     def __init__(self, gsheets, db):
         self.gsheets = gsheets
         self.db = db
+        self.gsid = ''
+        self.type = 'team'
+        self.template_id = '1VRGeK8m-w_ZCjg1SDQ74TZ7jpHsRiTiI3AcD54I5FC8'
 
-    def create(self, email):
-        try:
-            # S_1 創立並設定新的 spreadsheet
-            # S_1-1 連接模板
-            template_gsid = '1VRGeK8m-w_ZCjg1SDQ74TZ7jpHsRiTiI3AcD54I5FC8'
-            template_spreadsheet = self.gsheets.open_by_key(template_gsid)
+    from common.create import create, link_url
 
-            # S_1-2 創立新的 spreadsheet
-            spreadsheet = self.gsheets.create('新建立之單位設定檔(可自訂名稱)')
-            gsid = spreadsheet.id
-
-            # S_1-3 從模板複製到新創立的 spreadsheet
-            for i in range(3):
-                worksheet = template_spreadsheet.worksheet('index', i).copy_to(gsid)
-                worksheet.title = re.search(r'(?<=\s)\S+$', worksheet.title).group(0)
-
-            # S_1-4 刪除初始 worksheet
-            sheet1 = spreadsheet.worksheet_by_title('Sheet1')
-            spreadsheet.del_worksheet(sheet1)
-
-            # S_1-5 '更新此單位設定' 連結
-            worksheet = spreadsheet.worksheet_by_title('說明')
-            update_url = f'{main_url}?action=update&on=team&gsid={gsid}'
-            worksheet.update_value('A3', f'=HYPERLINK("{update_url}", "更新此單位設定")')
-
-            # S_1-6 '刪除此單位' 連結
-            delete_url = f'{main_url}?action=delete&on=team&gsid={gsid}'
-            worksheet.update_value('A4', f'=HYPERLINK("{delete_url}", "刪除此單位")')
-
-            # S_1-7 設定分享權限
-            email_message = '新建立之單位設定檔'
-            spreadsheet.share(email, 'writer', emailMessage=email_message)
-            # TODO 到時我的權限可拿掉
-            spreadsheet.share('yuncheng.dev@gmail.com', 'writer', emailMessage=email_message)
-            # NOTE 轉移所有權
-            # spreadsheet.share('yuncheng.dev@gmail.com', 'owner', transferOwnership=True)
-
-        except:
-            return '建立單位失敗!'
-
-        return f'新建立之單位設定檔連結已寄至信箱（可能會在垃圾郵件中....），或複製此連結進入：<br/><br/> {spreadsheet.url}'
 
     def update(self, gsid):
         try:
