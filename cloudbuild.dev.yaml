@@ -1,0 +1,17 @@
+steps:
+# Build the container image
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'gcr.io/survey-b59b0/interviewer-quiz:$COMMIT_SHA', '.']
+# Push the container image to Container Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', 'gcr.io/survey-b59b0/interviewer-quiz:$COMMIT_SHA']
+# Deploy container image to Cloud Run
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+# NOTE 地區選在台灣
+  args: ['run', 'deploy', 'interviewer-quiz', '--image', 'gcr.io/survey-b59b0/interviewer-quiz:$COMMIT_SHA',
+         '--region', 'asia-east1', '--platform', 'managed']
+  env:
+    - 'ENV=dev'
+images:
+- gcr.io/survey-b59b0/interviewer-quiz:$COMMIT_SHA
