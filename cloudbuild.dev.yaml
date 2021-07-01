@@ -14,5 +14,10 @@ steps:
          '--region', 'asia-east1', '--platform', 'managed', '--allow-unauthenticated']
   env:
     - 'ENV=dev'
+  secretEnv: ['CREDENTIALS']
 images:
 - 'gcr.io/$PROJECT_ID/survey-app-backend:$COMMIT_SHA'
+availableSecrets:
+  secretManager:
+    - versionName: projects/145609522741/secrets/credential_for_backend/versions/1
+      env: 'CREDENTIALS'

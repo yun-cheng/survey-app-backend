@@ -2,7 +2,7 @@
 firebase/*
 
 credentials.json
-credentials_dev.json
+credentials.dev.json
 
 __pycache__/*
 
