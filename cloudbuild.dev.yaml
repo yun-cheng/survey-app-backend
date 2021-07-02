@@ -12,8 +12,8 @@ steps:
   args: ['run', 'deploy', 'survey-app-backend',
          '--image', 'gcr.io/$PROJECT_ID/survey-app-backend:$COMMIT_SHA',
          '--region', 'asia-east1', '--platform', 'managed', '--allow-unauthenticated',
-         '--update-env-vars', 'ENV=dev,CREDENTIALS=$$CREDENTIALS']
-  secretEnv: ['CREDENTIALS']
+         '--update-env-vars', 'ENV=dev']
+#  secretEnv: ['CREDENTIALS']
 images:
 - 'gcr.io/$PROJECT_ID/survey-app-backend:$COMMIT_SHA'
 availableSecrets:
