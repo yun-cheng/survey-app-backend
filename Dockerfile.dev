@@ -1,5 +1,5 @@
 # https://hub.docker.com/_/python
-FROM python:3.7-slim
+FROM python:3.9-slim
 
 WORKDIR /app
 COPY requirements.txt .
