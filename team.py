@@ -18,6 +18,11 @@ class Team:
             gsheets = self.gsheets
             db = self.db
             spreadsheet = gsheets.open_by_key(gsid)
+            self.spreadsheet = spreadsheet
+            self.gsid = gsid
+
+            # S_ 更新說明頁
+            self.link_url()
 
             # S_1-2 提取資訊
             team_info = spreadsheet.worksheet_by_title('單位資訊') \

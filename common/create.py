@@ -79,3 +79,12 @@ def link_url(self):
         # S_4 '刪除此問卷紀錄' 連結
         delete_result_url = f'{main_url}?action=delete&on=survey_response&gsid={gsid}'
         worksheet.update_value('A7', f'=HYPERLINK("{delete_result_url}", "刪除此問卷回覆")')
+
+    elif self.type == 'module':
+        # S_ '更新此問卷模組設定' 連結
+        update_url = f'{main_url}?action=update&on={self.module_str}module&gsid={gsid}'
+        worksheet.update_value('A3', f'=HYPERLINK("{update_url}", "連結此問卷模組至專案")')
+
+        # S_1-7 '刪除此問卷模組設定' 連結
+        delete_url = f'{main_url}?action=delete&on={self.module_str}module&gsid={gsid}'
+        worksheet.update_value('A5', f'=HYPERLINK("{delete_url}", "取消連結此問卷模組至專案")')

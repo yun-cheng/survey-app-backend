@@ -21,43 +21,47 @@ class Project:
     from .update_subprocess import update_response_list
 
     def update(self, gsid):
-        # try:
-        # S_1 連接 spreadsheet
-        gsheets = self.gsheets
-        self.gsid = gsid
-        spreadsheet = gsheets.open_by_key(gsid)
-        self.spreadsheet = spreadsheet
-        # NOTE 欄位翻譯表
-        self.get_translate_df()
+        try:
+            # S_1 連接 spreadsheet
+            gsheets = self.gsheets
+            self.gsid = gsid
+            spreadsheet = gsheets.open_by_key(gsid)
+            self.spreadsheet = spreadsheet
 
-        # S_2 提取資訊
-        project_info = spreadsheet.worksheet_by_title('專案資訊') \
-            .get_values(start='C2', end='C5', include_all=True)
-        project_info = [v[0] for v in project_info]
-        project_info.insert(0, gsid)
+            # S_ 更新說明頁
+            self.link_url()
 
-        keys = ['projectId', 'customProjectId', 'projectName', 'customTeamId', 'responseImportWorksheetName']
+            # NOTE 欄位翻譯表
+            self.get_translate_df()
 
-        self.info_dict = dict(zip(keys, project_info))
+            # S_2 提取資訊
+            project_info = spreadsheet.worksheet_by_title('專案資訊') \
+                .get_values(start='C2', end='C5', include_all=True)
+            project_info = [v[0] for v in project_info]
+            project_info.insert(0, gsid)
 
-        # S_3 檢查輸入的內容是否符合格式
-        check_result = self.check_project_valid()
-        if check_result:
-            return check_result
+            keys = ['projectId', 'customProjectId', 'projectName', 'customTeamId', 'responseImportWorksheetName']
 
-        # S_4 更新匯入歷史作答
-        self.update_response_list()
+            self.info_dict = dict(zip(keys, project_info))
 
-        # S_5 更新 project
-        # NOTE Firestore SET
-        project_ref = self.db.document('project', gsid)
-        self.batch.set(project_ref, self.info_dict)
+            # S_3 檢查輸入的內容是否符合格式
+            check_result = self.check_project_valid()
+            if check_result:
+                return check_result
 
-        # S_6 確認沒問題再一起 commit
-        self.batch.commit()
+            # S_4 更新匯入歷史作答
+            self.update_response_list()
 
-        # except:
-        #     return '更新專案設定失敗!'
+            # S_5 更新 project
+            # NOTE Firestore SET
+            project_ref = self.db.document('project', gsid)
+            self.batch.set(project_ref, self.info_dict)
+
+            # S_6 確認沒問題再一起 commit
+            self.batch.commit()
+
+        except:
+            return '更新專案設定失敗!'
 
         return '更新專案設定成功!'
 

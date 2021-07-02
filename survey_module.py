@@ -6,54 +6,52 @@ class SurveyModule:
     def __init__(self, gsheets, db, module=''):
         self.gsheets = gsheets
         self.db = db
+        self.type = 'module'
         self.module = module
 
+    from common.create import link_url
+
     def create(self, email):
-        # try:
-        # S_1-1 連接模板
-        template_id = '1wK5BmSYdzb8Rsju4SKYWJHQSw8Iij8-nHYmfE0lFjSI'
-        module_str = ''
-        if self.module == 'recode':
-            template_id = '11AXqaKcnjuPHmU5IsFkq-VY4svFTJLO8BHwf9yIlgck'
-            module_str = 'recode_'
-        elif self.module == 'samplingWithinHousehold':
-            template_id = '1C1BGmmUvCH0TsZ5sFT5UqG21TKaXX2pkUuPPKCzf8C0'
-            module_str = 'samplingWithinHousehold_'
+        try:
+            # S_1-1 連接模板
+            template_id = '1wK5BmSYdzb8Rsju4SKYWJHQSw8Iij8-nHYmfE0lFjSI'
+            module_str = ''
+            if self.module == 'recode':
+                template_id = '11AXqaKcnjuPHmU5IsFkq-VY4svFTJLO8BHwf9yIlgck'
+                module_str = 'recode_'
+            elif self.module == 'samplingWithinHousehold':
+                template_id = '1C1BGmmUvCH0TsZ5sFT5UqG21TKaXX2pkUuPPKCzf8C0'
+                module_str = 'samplingWithinHousehold_'
+            self.module_str = module_str
 
-        template_spreadsheet = self.gsheets.open_by_key(template_id)
+            template_spreadsheet = self.gsheets.open_by_key(template_id)
 
-        # S_1-2 創立新的 spreadsheet
-        spreadsheet = self.gsheets.create('新建立之問卷模組設定檔(可自訂名稱)')
-        gsid = spreadsheet.id
+            # S_1-2 創立新的 spreadsheet
+            spreadsheet = self.gsheets.create('新建立之問卷模組設定檔(可自訂名稱)')
+            gsid = spreadsheet.id
 
-        # S_1-3 從模板複製到新創立的 spreadsheet
-        for template_worksheet in template_spreadsheet.worksheets():
-            worksheet = template_worksheet.copy_to(gsid)
-            worksheet.title = re.search(r'(?<=\s)\S+$', worksheet.title).group(0)
+            # S_1-3 從模板複製到新創立的 spreadsheet
+            for template_worksheet in template_spreadsheet.worksheets():
+                worksheet = template_worksheet.copy_to(gsid)
+                worksheet.title = re.search(r'(?<=\s)\S+$', worksheet.title).group(0)
 
-        # S_1-4 刪除初始 worksheet
-        sheet1 = spreadsheet.worksheet_by_title('Sheet1')
-        spreadsheet.del_worksheet(sheet1)
+            # S_1-4 刪除初始 worksheet
+            sheet1 = spreadsheet.worksheet_by_title('Sheet1')
+            spreadsheet.del_worksheet(sheet1)
 
-        # S_1-5 '更新此問卷模組設定' 連結
-        worksheet = spreadsheet.worksheet_by_title('說明')
-        update_url = f'{main_url}?action=update&on={module_str}module&gsid={gsid}'
-        worksheet.update_value('A3', f'=HYPERLINK("{update_url}", "連結此問卷模組至專案")')
+            # S_ 更新說明頁
+            self.link_url()
 
-        # S_1-7 '刪除此問卷模組設定' 連結
-        delete_url = f'{main_url}?action=delete&on={module_str}module&gsid={gsid}'
-        worksheet.update_value('A5', f'=HYPERLINK("{delete_url}", "取消連結此問卷模組至專案")')
+            # S_1-9 設定分享權限
+            email_message = '新建立之問卷模組設定檔'
+            spreadsheet.share(email, 'writer', emailMessage=email_message)
+            # TODO 到時我的權限可拿掉
+            spreadsheet.share('yuncheng.dev@gmail.com', 'writer', emailMessage=email_message)
+            # NOTE 轉移所有權
+            # spreadsheet.share('yuncheng.dev@gmail.com', 'owner', transferOwnership=True)
 
-        # S_1-9 設定分享權限
-        email_message = '新建立之問卷模組設定檔'
-        spreadsheet.share(email, 'writer', emailMessage=email_message)
-        # TODO 到時我的權限可拿掉
-        spreadsheet.share('yuncheng.dev@gmail.com', 'writer', emailMessage=email_message)
-        # NOTE 轉移所有權
-        # spreadsheet.share('yuncheng.dev@gmail.com', 'owner', transferOwnership=True)
-
-        # except:
-        #     return '建立問卷模組失敗!'
+        except:
+            return '建立問卷模組失敗!'
 
         return f'新建立之問卷模組設定檔連結已寄至信箱（可能會在垃圾郵件中....），或複製此連結進入：<br/><br/> {spreadsheet.url}'
 
@@ -63,6 +61,18 @@ class SurveyModule:
             gsheets = self.gsheets
             db = self.db
             spreadsheet = gsheets.open_by_key(gsid)
+            self.spreadsheet = spreadsheet
+            self.gsid = gsid
+
+            module_str = ''
+            if self.module == 'recode':
+                module_str = 'recode_'
+            elif self.module == 'samplingWithinHousehold':
+                module_str = 'samplingWithinHousehold_'
+            self.module_str = module_str
+
+            # S_ 更新說明頁
+            self.link_url()
 
             # S_1-2 提取資訊
             survey_module_info = spreadsheet.worksheet_by_title('問卷模組資訊') \

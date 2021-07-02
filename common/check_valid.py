@@ -47,7 +47,7 @@ def check_project_valid(self):
 
     # S_1 檢查是否為空
     for k, v in info_dict.items():
-        if not v:
+        if k != 'responseImportWorksheetName' and not v:
             return '專案資訊不能為空!'
 
     # S_2 檢查連結的單位 ID 是否存在

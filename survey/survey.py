@@ -39,6 +39,9 @@ class Survey:
             self.gsid = gsid
             spreadsheet = gsheets.open_by_key(gsid)
             self.spreadsheet = spreadsheet
+
+            self.link_url()
+
             # NOTE 欄位翻譯表
             self.get_translate_df()
 
