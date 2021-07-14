@@ -1,7 +1,7 @@
 from common.common import *
 
 
-def get_survey_question_list(self, spreadsheet, survey_worksheet_name):
+def get_survey_question_list(self, spreadsheet, survey_worksheet_name, module):
     question_list_df = get_worksheet_df(spreadsheet, worksheet_title=survey_worksheet_name)
 
     question_list_df.columns = self.translate(question_list_df.columns.to_series(), '問卷')
@@ -9,7 +9,7 @@ def get_survey_question_list(self, spreadsheet, survey_worksheet_name):
 
     question_list_df['questionBody'] = question_list_df.questionBody.apply(
         self.to_formatted_text_list,
-        current_module_type='main'
+        current_module_type=module
     ).to_list()
     question_list_df['stringBody'] = ''
 
@@ -101,7 +101,7 @@ def get_survey_module_question_list(self, gsid, module):
     if module == 'recode':
         return self.get_recode_question_list(spreadsheet, survey_worksheet_name)
     else:
-        return self.get_survey_question_list(spreadsheet, survey_worksheet_name)
+        return self.get_survey_question_list(spreadsheet, survey_worksheet_name, module)
 
 
 def to_formatted_text_list(self, plain_str, current_module_type):

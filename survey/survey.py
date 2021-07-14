@@ -34,18 +34,19 @@ class Survey:
 
     def update(self, gsid):
         try:
-            # S_1 連接 spreadsheet
+            # S_ 連接 spreadsheet
             gsheets = self.gsheets
             self.gsid = gsid
             spreadsheet = gsheets.open_by_key(gsid)
             self.spreadsheet = spreadsheet
 
+            # S_ 更新說明頁
             self.link_url()
 
-            # NOTE 欄位翻譯表
+            # S_ 取得翻譯表
             self.get_translate_df()
 
-            # S_2 提取資訊
+            # S_ 提取資訊頁
             survey_info = spreadsheet.worksheet_by_title('問卷資訊') \
                 .get_values(start='C2', end='C12', include_all=True)
             survey_info = [v[0] for v in survey_info]
@@ -58,12 +59,12 @@ class Survey:
             info_dict = dict(zip(keys, survey_info))
             self.info_dict = info_dict
 
-            # S_3 檢查輸入的內容是否符合格式
+            # S_ 檢查輸入的內容是否符合格式
             check_result = self.check_survey_valid()
             if check_result:
                 return check_result
 
-            # S_4 survey_dict 架構
+            # S_ survey_dict 架構
             self.survey_dict = {
                 'teamId': self.team_gsid,
                 'projectId': self.project_gsid,
@@ -74,16 +75,16 @@ class Survey:
                 'moduleInfo': self.module_dict,
             }
 
-            # S_5 更新受訪者列表
+            # S_ 更新受訪者列表
             self.update_respondent_list()
 
-            # S_6 更新所有問卷相關題目
+            # S_ 更新所有問卷相關題目
             self.update_survey_question()
 
-            # S_6 更新參考作答列表
+            # S_ 更新參考作答列表
             self.update_reference_list()
 
-            # S_7 確認沒問題再一起 commit
+            # S_ 確認沒問題再一起 commit
             self.batch.commit()
 
         except:
