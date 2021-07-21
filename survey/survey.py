@@ -19,75 +19,75 @@ class Survey:
         self.module_dict = {}
         self.reference_key_list = []
         self.interviewer_list = []
+        self.where = [''] * 5
+        self.where_list = []
         self.type = 'survey'
 
+    from common.common import set_where, where_to_str, where_list_to_str
     from common.create import create, link_url
-    from .choice import create_choice_list, choice_import_to_df
+    from common.update import get_info_dict
+    from common.check_valid import check_survey_valid, check_survey_field_value_not_occupied
+    from common.translate import get_translate_df, translate
     from common.db_operation import get_team_dict, get_project_dict, get_survey_module_dict, get_survey_dict, \
         get_response_dict, batch_set_by_interviewer, get_survey_dict_from_field
+    from .choice import create_choice_list, choice_import_to_df
     from .expression import reformat_expression
     from .question import get_survey_question_list, get_recode_question_list, get_survey_module_question_list, \
         to_formatted_text_list
-    from common.check_valid import check_survey_valid, check_survey_field_value_not_occupied
-    from common.translate import get_translate_df, translate
     from .update_subprocess import update_respondent_list, update_survey_question, update_reference_list
 
     def update(self, gsid):
         try:
             # S_ 連接 spreadsheet
+            self.set_where(0, '連接 spreadsheet')
             gsheets = self.gsheets
             self.gsid = gsid
             spreadsheet = gsheets.open_by_key(gsid)
             self.spreadsheet = spreadsheet
 
             # S_ 更新說明頁
+            self.set_where(0, '更新說明頁')
             self.link_url()
 
             # S_ 取得翻譯表
+            self.set_where(0, '取得翻譯表')
             self.get_translate_df()
 
-            # S_ 提取資訊頁
-            survey_info = spreadsheet.worksheet_by_title('問卷資訊') \
-                .get_values(start='C2', end='C12', include_all=True)
-            survey_info = [v[0] for v in survey_info]
-            survey_info.insert(0, gsid)
+            # S_ 提取資訊頁內容
+            self.set_where(0, '提取資訊頁內容')
+            self.get_info_dict('問卷資訊')
+            self.info_dict['surveyId'] = gsid
 
-            keys = ['surveyId', 'surveyName', 'customSurveyId',
-                    'customProjectId', 'customTeamId', 'surveyWorksheetName', 'respondentWorksheetName',
-                    'samplingWithinHousehold', 'visitReport', 'housingType', 'interviewReport', 'recode']
-
-            info_dict = dict(zip(keys, survey_info))
-            self.info_dict = info_dict
-
-            # S_ 檢查輸入的內容是否符合格式
-            check_result = self.check_survey_valid()
-            if check_result:
-                return check_result
+            # S_ 檢查資訊頁內容是否正確
+            self.check_survey_valid()
 
             # S_ survey_dict 架構
             self.survey_dict = {
                 'teamId': self.team_gsid,
                 'projectId': self.project_gsid,
                 'surveyId': gsid,
-                'customSurveyId': info_dict['customSurveyId'],
-                'surveyName': info_dict['surveyName'],
+                'customSurveyId': self.info_dict['customSurveyId'],
+                'surveyName': self.info_dict['surveyName'],
                 'module': defaultdict(dict),
                 'moduleInfo': self.module_dict,
             }
 
-            # S_ 更新受訪者列表
+            # S_ 處理受訪者分頁內容
             self.update_respondent_list()
 
-            # S_ 更新所有問卷相關題目
+            # S_ 處理各個問卷模組資料表
             self.update_survey_question()
 
             # S_ 更新參考作答列表
+            self.set_where(0, '更新參考作答列表')
             self.update_reference_list()
 
             # S_ 確認沒問題再一起 commit
             self.batch.commit()
 
-        except:
-            return '更新問卷設定失敗!'
+            return f'更新問卷設定成功!<br/><br/>' \
+                   f'執行歷程：{self.where_list_to_str()}'
 
-        return '更新問卷設定成功!'
+        except:
+            return f'更新問卷設定失敗，錯誤出現在：<br/>{self.where_to_str()}<br/><br/>' \
+                   f'執行歷程：{self.where_list_to_str()}'

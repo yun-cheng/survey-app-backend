@@ -10,6 +10,8 @@ class SurveyModule:
         self.module = module
 
     from common.create import link_url
+    from common.update import get_info_dict
+    from common.translate import get_translate_df, translate
 
     def create(self, email):
         try:
@@ -74,47 +76,41 @@ class SurveyModule:
             # S_ 更新說明頁
             self.link_url()
 
+            # S_ 取得翻譯表
+            self.get_translate_df()
+
             # S_1-2 提取資訊
-            survey_module_info = spreadsheet.worksheet_by_title('問卷模組資訊') \
-                .get_values(start='C2', end='C8', include_all=True)
-            survey_module_info = [v[0] for v in survey_module_info]
-            survey_module_info.insert(0, gsid)
-
-            keys = ['surveyModuleId', 'surveyModuleName', 'customSurveyModuleId',
-                    'customProjectId', 'customTeamId', 'surveyModuleWorksheetName']
-
-            if self.module == 'samplingWithinHousehold':
-                keys.append('sampling_rule')
-
-            survey_module_info_dict = dict(zip(keys, survey_module_info))
+            self.get_info_dict('問卷模組資訊')
+            self.info_dict['surveyModuleId'] = gsid
+            info_dict = self.info_dict
 
             # S_1-3 檢查輸入的內容是否符合格式
             # S_1-3-1 檢查是否為空
-            for k, v in survey_module_info_dict.items():
+            for k, v in info_dict.items():
                 if not v:
                     return '問卷模組資訊不能為空!'
 
             # S_1-3-2 檢查連結的單位 ID、專案 ID、問卷模組模組 ID 是否存在
             team_query = db.collection('team') \
-                .where('customTeamId', '==', survey_module_info_dict['customTeamId'])
+                .where('customTeamId', '==', info_dict['customTeamId'])
             team_dict = team_query.query_to_dict(first=True)
 
             if team_dict:
                 team_gsid = team_dict['teamId']
-                survey_module_info_dict['teamId'] = team_gsid
-                survey_module_info_dict.pop('customTeamId')
+                info_dict['teamId'] = team_gsid
+                info_dict.pop('customTeamId')
             else:
                 return '找不到連結的單位 ID！'
 
             project_query = db.collection('project') \
-                .where('customProjectId', '==', survey_module_info_dict['customProjectId'])\
+                .where('customProjectId', '==', info_dict['customProjectId'])\
                 .where('teamId', '==', team_gsid)
             project_query_dict = project_query.query_to_dict(first=True)
 
             if project_query_dict:
                 project_gsid = project_query_dict['projectId']
-                survey_module_info_dict['projectId'] = project_gsid
-                survey_module_info_dict.pop('customProjectId')
+                info_dict['projectId'] = project_gsid
+                info_dict.pop('customProjectId')
             else:
                 return '找不到連結的專案 ID！'
 
@@ -122,7 +118,7 @@ class SurveyModule:
             survey_module_query = db.collection('surveyModule') \
                 .where('projectId', '==', project_gsid) \
                 .where('teamId', '==', team_gsid)\
-                .where('surveyModuleName', '==', survey_module_info_dict['surveyModuleName'])
+                .where('surveyModuleName', '==', info_dict['surveyModuleName'])
             survey_module_query_dict = survey_module_query.query_to_dict(first=True)
 
             if survey_module_query_dict and survey_module_query_dict['surveyModuleId'] != gsid:
@@ -131,7 +127,7 @@ class SurveyModule:
             survey_module_query = db.collection('surveyModule') \
                 .where('projectId', '==', project_gsid) \
                 .where('teamId', '==', team_gsid) \
-                .where('customSurveyModuleId', '==', survey_module_info_dict['customSurveyModuleId'])
+                .where('customSurveyModuleId', '==', info_dict['customSurveyModuleId'])
             survey_module_query_dict = survey_module_query.query_to_dict(first=True)
 
             if survey_module_query_dict and survey_module_query_dict['surveyModuleId'] != gsid:
@@ -144,7 +140,7 @@ class SurveyModule:
             # TAG Firestore SET
             # EXAMPLE
             survey_module_ref = db.document('surveyModule', gsid)
-            batch.set(survey_module_ref, survey_module_info_dict)
+            batch.set(survey_module_ref, info_dict)
 
             batch.commit()
         except:

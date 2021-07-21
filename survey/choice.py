@@ -42,42 +42,47 @@ def choice_row_to_df(row, regex):
 
 
 def create_choice_list(self, row, spreadsheet):
-    if row['questionType'] in ['single', 'multiple', 'popupSingle', 'popupMultiple']:
-        if row['choice_import']:
-            choice_df = self.choice_import_to_df(spreadsheet, row['choice_import'])
+    try:
+        if row['questionType'] in ['single', 'multiple', 'popupSingle', 'popupMultiple']:
+            if row['choice_import']:
+                choice_df = self.choice_import_to_df(spreadsheet, row['choice_import'])
+            else:
+                choice_df = choice_row_to_df(row, regex='choiceId_')
+                choice_df['isSpecialAnswer'] = False
         else:
-            choice_df = choice_row_to_df(row, regex='choiceId_')
-            choice_df['isSpecialAnswer'] = False
-    else:
-        choice_df = pd.DataFrame()
+            choice_df = pd.DataFrame()
 
-    # H_ special answer
-    special_answer_df = choice_row_to_df(row, regex='specialAnswer_')
-    special_answer_df['isSpecialAnswer'] = True
+        # H_ special answer
+        special_answer_df = choice_row_to_df(row, regex='specialAnswer_')
+        special_answer_df['isSpecialAnswer'] = True
 
-    choice_df = choice_df.append(special_answer_df, ignore_index=True)
+        choice_df = choice_df.append(special_answer_df, ignore_index=True)
 
-    # S_ 按選項順序的分組
-    # https://stackoverflow.com/a/62419908
-    choice_df['consecutiveChoiceGroup'] = choice_df.choiceGroup.ne(choice_df.choiceGroup.shift()).cumsum()
-    choice_df['groupId'] = choice_df.groupby([choice_df.choiceGroup, choice_df.consecutiveChoiceGroup])[
-        'choiceGroup'].cumcount()
-    choice_df['isGroupFirst'] = (choice_df.groupId == 0) & (choice_df.choiceGroup != '')
-    choice_df.drop(columns=['consecutiveChoiceGroup', 'groupId'], inplace=True)
+        # S_ 按選項順序的分組
+        # https://stackoverflow.com/a/62419908
+        choice_df['consecutiveChoiceGroup'] = choice_df.choiceGroup.ne(choice_df.choiceGroup.shift()).cumsum()
+        choice_df['groupId'] = choice_df.groupby([choice_df.choiceGroup, choice_df.consecutiveChoiceGroup])[
+            'choiceGroup'].cumcount()
+        choice_df['isGroupFirst'] = (choice_df.groupId == 0) & (choice_df.choiceGroup != '')
+        choice_df.drop(columns=['consecutiveChoiceGroup', 'groupId'], inplace=True)
 
-    choice_list = choice_df.to_dict('records')
+        choice_list = choice_df.to_dict('records')
 
-    has_special_answer = any(choice_df.isSpecialAnswer)
+        has_special_answer = any(choice_df.isSpecialAnswer)
 
-    # H_ answer, answerStatus
-    if row['questionType'] == 'description':
-        answer_status_type = 'answered'
-    elif row['showQuestion'] == '':
-        answer_status_type = 'unanswered'
-    else:
-        answer_status_type = 'hidden'
+        # H_ answer, answerStatus
+        if row['showQuestion'] == '':
+            if row['questionType'] == 'description':
+                answer_status_type = 'answered'
+            else:
+                answer_status_type = 'unanswered'
+        else:
+            answer_status_type = 'hidden'
 
-    return choice_list, has_special_answer, answer_status_type
+        return choice_list, has_special_answer, answer_status_type
+
+    except:
+        self.set_where(3, f'題號 {row["questionId"]}', error=True)
 
 
 def choice_import_to_df(self, spreadsheet, choice_import):

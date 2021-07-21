@@ -2,9 +2,13 @@ from common.common import *
 
 
 def update_respondent_list(self):
+    self.set_where(0, '處理受訪者分頁內容')
+
     # H_ 更新 Firestore: interviewerRespondentList/{interviewerId_surveyId}
     # NOTE DELETE, SET operation
-    # S_1 移除此問卷的所有受訪者列表
+    # S_1 先移除所有之前新增至資料庫中的受訪者
+    self.set_where(1, '先移除所有之前新增至資料庫中的受訪者')
+
     remove_docs_list = self.db.collection('interviewerRespondentList') \
         .where('surveyId', '==', self.gsid).stream()
 
@@ -12,6 +16,8 @@ def update_respondent_list(self):
         self.batch.delete(doc.reference)
 
     # S_2 新增此問卷的受訪者列表
+    self.set_where(1, '提取受訪者分頁中的資料表')
+
     respondent_df = get_worksheet_df(self.spreadsheet,
                                      worksheet_title=self.info_dict['respondentWorksheetName'],
                                      end='F')
@@ -22,13 +28,18 @@ def update_respondent_list(self):
     self.respondent_df = respondent_df
     self.survey_dict['interviewerList'] = list(self.interviewer_list)
 
+    self.set_where(1, '新增受訪者至資料庫中')
     self.batch_set_by_interviewer(respondent_df, 'interviewerRespondentList')
 
 
 def update_survey_question(self):
     # H_ 更新 Firestore: survey/{surveyId}
     # NOTE SET operation
+    self.set_where(0, '處理各個問卷模組資料表')
+
     # S_1 提取問卷
+    self.set_where(1, f'提取{self.info_dict["surveyWorksheetName"]}分頁資料表')
+
     self.survey_dict['module']['main'] = \
         self.get_survey_question_list(self.spreadsheet, self.info_dict['surveyWorksheetName'], 'main')
 

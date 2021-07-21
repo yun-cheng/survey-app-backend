@@ -24,6 +24,33 @@ else:
     main_url = 'https://interviewer-quiz-lrqnbewzdq-de.a.run.app/'
 
 
+def set_where(self, index=0, str='', error=False):
+    self.where[index] = str
+
+    if index != 4:
+        self.where[(index + 1):] = [''] * (4 - index)
+
+    self.where_list.append((index, str))
+
+    if error:
+        raise ValueError
+
+
+def where_to_str(self):
+    where = [f'{".." * i * 2}{x}' for i, x in enumerate(self.where) if x != '']
+    where_str = '<br/>'.join(where)
+
+    return where_str
+
+
+def where_list_to_str(self):
+    where_list_str = ''
+    for where in self.where_list:
+        where_list_str += f'<br/>{".." * where[0] * 2}{where[1]}'
+
+    return where_list_str
+
+
 def get_worksheet_df(spreadsheet, worksheet_title, **kwargs):
     df = spreadsheet.worksheet_by_title(worksheet_title)\
         .get_as_df(numerize=False, include_tailing_empty=True, **kwargs)
