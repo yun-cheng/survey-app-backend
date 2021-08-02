@@ -21,20 +21,18 @@ class SurveyModule:
             if self.module == 'recode':
                 template_id = '11AXqaKcnjuPHmU5IsFkq-VY4svFTJLO8BHwf9yIlgck'
                 module_str = 'recode_'
-            elif self.module == 'samplingWithinHousehold':
-                template_id = '1C1BGmmUvCH0TsZ5sFT5UqG21TKaXX2pkUuPPKCzf8C0'
-                module_str = 'samplingWithinHousehold_'
             self.module_str = module_str
 
             template_spreadsheet = self.gsheets.open_by_key(template_id)
 
             # S_1-2 創立新的 spreadsheet
             spreadsheet = self.gsheets.create('新建立之問卷模組設定檔(可自訂名稱)')
-            gsid = spreadsheet.id
+            self.spreadsheet = spreadsheet
+            self.gsid = spreadsheet.id
 
             # S_1-3 從模板複製到新創立的 spreadsheet
             for template_worksheet in template_spreadsheet.worksheets():
-                worksheet = template_worksheet.copy_to(gsid)
+                worksheet = template_worksheet.copy_to(self.gsid)
                 worksheet.title = re.search(r'(?<=\s)\S+$', worksheet.title).group(0)
 
             # S_1-4 刪除初始 worksheet

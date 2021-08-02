@@ -85,9 +85,10 @@ class Survey:
             # S_ 確認沒問題再一起 commit
             self.batch.commit()
 
-            return f'更新問卷設定成功!<br/><br/>' \
+            return f'更新問卷設定成功！請關閉視窗，避免頁面重整後重新送出更新請求。<br/><br/>' \
                    f'執行歷程：{self.where_list_to_str()}'
 
         except:
-            return f'更新問卷設定失敗，錯誤出現在：<br/>{self.where_to_str()}<br/><br/>' \
+            return f'更新問卷設定失敗！請關閉視窗，避免頁面重整後重新送出更新請求。<br/><br/>' \
+                   f'錯誤出現在：<br/>{self.where_to_str()}<br/><br/>' \
                    f'執行歷程：{self.where_list_to_str()}'
