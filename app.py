@@ -2,7 +2,7 @@
 from common.load_credentials import *
 from team import Team
 from project.project import Project
-from quiz import Quiz
+# from quiz import Quiz
 from survey.survey import Survey
 from survey_module import SurveyModule
 

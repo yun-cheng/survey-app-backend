@@ -8,6 +8,15 @@ def get_survey_question_list(self, spreadsheet, survey_worksheet_name, module):
     question_list_df.columns = self.translate(question_list_df.columns.to_series(), '問卷')
     question_list_df['questionType'] = self.translate(question_list_df.questionType, '題目類型')
 
+    # S_ 處理表格題組
+    if 'tableId' in question_list_df.columns:
+        self.set_where(2, '初步處理表格題組')
+        question_list_df = self.process_table_question(question_list_df)
+        question_list_df['rowId'] = question_list_df.rowId.fillna(-1).astype(int)
+    else:
+        question_list_df['tableId'] = ''
+        question_list_df['rowId'] = -1
+
     # S_ questionBody
     self.set_where(2, '處理題目內容')
     question_list_df['questionBody'] = question_list_df.apply(
@@ -46,9 +55,9 @@ def get_survey_question_list(self, spreadsheet, survey_worksheet_name, module):
     if all(question_list_df.pageNumber != 0):
         self.set_where(2, '檢查頁數有第 0 頁', error=True)
     if any(question_list_df.questionId == ''):
-        self.set_where(2, '檢查題目編號不為空', error=True)
+        self.set_where(2, '檢查題號不為空', error=True)
     if len(question_list_df.questionId) != question_list_df.questionId.nunique():
-        self.set_where(2, '檢查題目編號不重複', error=True)
+        self.set_where(2, '檢查題號不重複', error=True)
 
     # S_
     question_list_df = question_list_df.filter(regex='^(?!choiceId_|specialAnswer_|choice_).*', axis=1)
@@ -92,6 +101,8 @@ def get_recode_question_list(self, spreadsheet, survey_worksheet_name):
     # S_ other columns
     self.set_where(2, '提取一般欄位')
     question_list_df[['questionNote', 'upperQuestionId']] = '', ''
+    question_list_df['tableId'] = ''
+    question_list_df['rowId'] = -1
     question_list_df['questionBody'] = [[{'type': 'string', 'stringBody': ''}]] * len(question_list_df)
     question_list_df['stringBody'] = ''
     question_list_df[['hideQuestionId', 'hasSpecialAnswer']] = False, False

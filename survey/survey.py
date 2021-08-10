@@ -32,6 +32,7 @@ class Survey:
         get_response_dict, batch_set_by_interviewer, get_survey_dict_from_field
     from .choice import create_choice_list, choice_import_to_df
     from .expression import reformat_expression
+    from .table import process_table_question
     from .question import get_survey_question_list, get_recode_question_list, get_survey_module_question_list, \
         to_formatted_text_list
     from .update_subprocess import update_respondent_list, update_survey_question, update_reference_list

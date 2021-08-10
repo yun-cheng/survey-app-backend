@@ -72,7 +72,7 @@ def create_choice_list(self, row, spreadsheet):
 
         # H_ answer, answerStatus
         if row['showQuestion'] == '':
-            if row['questionType'] == 'description':
+            if row['questionType'] in ['description', 'simpleTable', 'complexTable']:
                 answer_status_type = 'answered'
             else:
                 answer_status_type = 'unanswered'
