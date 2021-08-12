@@ -11,8 +11,11 @@ steps:
 # NOTE 地區選在台灣
   args: ['run', 'deploy', 'survey-app-backend',
          '--image', 'gcr.io/$PROJECT_ID/survey-app-backend:$COMMIT_SHA',
-         '--region', 'asia-east1', '--platform', 'managed', '--allow-unauthenticated',
-         '--update-env-vars', 'ENV=dev', '--timeout=15m', '--memory=1Gi', '--concurrency=1']
+         '--region', 'asia-east1',
+         '--platform', 'managed',
+         '--allow-unauthenticated',
+         '--update-env-vars', 'ENV=dev',
+         '--timeout=15m', '--memory=1Gi', '--concurrency=1', '--max-instances=10']
 #  secretEnv: ['CREDENTIALS']
 images:
 - 'gcr.io/$PROJECT_ID/survey-app-backend:$COMMIT_SHA'
