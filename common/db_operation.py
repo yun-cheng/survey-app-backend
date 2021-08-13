@@ -1,3 +1,5 @@
+from .common import *
+
 
 def get_team_dict(self, custom_team_id):
     query = self.db.collection('team') \
@@ -114,3 +116,8 @@ def batch_set_response(self, df):
 
             doc_ref = self.db.collection('surveyResponse').document()
             self.batch.set(doc_ref, result_dict)
+
+
+def set_survey(self):
+    self.bucket.dict_to_storage(self.survey_dict, f'survey/{self.gsid}/try.json')
+    self.bucket.dict_to_storage(self.survey_dict, f'survey/{self.gsid}/{self.gsid}.json')

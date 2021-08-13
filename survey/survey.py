@@ -3,9 +3,10 @@ from common.common import *
 
 
 class Survey:
-    def __init__(self, gsheets, db):
+    def __init__(self, gsheets, db, bucket):
         self.gsheets = gsheets
         self.db = db
+        self.bucket = bucket
         self.batch = self.db.batch()
         self.team_gsid = ''
         self.project_gsid = ''
@@ -29,7 +30,7 @@ class Survey:
     from common.check_valid import check_survey_valid, check_survey_field_value_not_occupied
     from common.translate import get_translate_df, translate
     from common.db_operation import get_team_dict, get_project_dict, get_survey_module_dict, get_survey_dict, \
-        get_response_dict, batch_set_by_interviewer, get_survey_dict_from_field
+        get_response_dict, batch_set_by_interviewer, get_survey_dict_from_field, set_survey
     from .choice import create_choice_list, choice_import_to_df
     from .expression import reformat_expression
     from .table import process_table_question
@@ -84,7 +85,10 @@ class Survey:
             self.update_reference_list()
 
             # S_ 確認沒問題再一起 commit
+            self.set_where(0, '批次上傳')
             self.batch.commit()
+            self.set_survey()
+
 
             return f'更新問卷設定成功！請關閉視窗，避免頁面重整後重新送出更新請求。<br/><br/>' \
                    f'執行歷程：{self.where_list_to_str()}'

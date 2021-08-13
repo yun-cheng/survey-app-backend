@@ -49,7 +49,10 @@ def update_survey_question(self):
             self.get_survey_module_question_list(self.module_dict[module]['surveyModuleId'], module)
 
     survey_ref = self.db.document('survey', self.gsid)
-    self.batch.set(survey_ref, self.survey_dict)
+    mini_survey_dict = self.survey_dict.copy()
+    mini_survey_dict.pop('module')
+    mini_survey_dict['random'] = str(uuid.uuid4())
+    self.batch.set(survey_ref, mini_survey_dict)
 
 
 def update_reference_list(self):

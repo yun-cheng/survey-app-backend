@@ -24,6 +24,7 @@ def main():
     # HIGHLIGHT 需開啟 Google Sheets API、Google Drive API
     gsheets = load_gsheets()
     db = load_firestore()
+    bucket = load_storage()
 
     # TEST 測試用
     # on = 'survey'
@@ -43,7 +44,7 @@ def main():
     # elif on == 'quiz':
     #     target = Quiz(gsheets=gsheets, db=db)
     elif on == 'survey':
-        target = Survey(gsheets=gsheets, db=db)
+        target = Survey(gsheets=gsheets, db=db, bucket=bucket)
     elif on == 'module':
         target = SurveyModule(gsheets=gsheets, db=db)
     elif on == 'recode_module':

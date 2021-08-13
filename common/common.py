@@ -1,6 +1,7 @@
 import json
 import string
 import os
+import uuid
 from collections import defaultdict
 import pytz
 import re
@@ -14,7 +15,9 @@ import numpy as np
 from firebase_admin import credentials
 from firebase_admin import firestore
 from flask import Flask, request
+from google.cloud import storage
 from google.cloud.firestore_v1 import DocumentReference, CollectionReference, Query
+from google.cloud.storage.bucket import Bucket
 
 
 # NOTE 切換 prod/dev
@@ -93,6 +96,23 @@ def query_to_dict(self, first=False):
     return query_dict
 
 
+def dict_to_storage(self, dict, filepath):
+    blob = self.blob(filepath)
+    blob.upload_from_string(
+        data=json.dumps(dict),
+        content_type='application/json'
+    )
+
+
+def dict_from_storage(self, filepath):
+    blob = self.blob(filepath)
+    dict = json.loads(blob.download_as_string())
+
+    return dict
+
+
 DocumentReference.doc_to_dict = doc_to_dict
 CollectionReference.query_to_dict = query_to_dict
 Query.query_to_dict = query_to_dict
+Bucket.dict_from_storage = dict_from_storage
+Bucket.dict_to_storage = dict_to_storage

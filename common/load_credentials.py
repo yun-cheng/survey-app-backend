@@ -15,3 +15,11 @@ def load_firestore():
     db = firestore.client()
 
     return db
+
+
+def load_storage():
+    cred = json.loads(os.environ['CREDENTIALS'])
+    storage_client = storage.Client.from_service_account_info(cred)
+    bucket = storage_client.get_bucket(f'{cred["project_id"]}.appspot.com')
+
+    return bucket
