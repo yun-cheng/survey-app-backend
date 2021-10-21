@@ -35,6 +35,9 @@ def main():
     # gsid = '1MYKhzY9g7AZHxbIUN8-oUCPEEXUWHRy4U-1Pe2pbRRE'
     # action = 'update'
 
+    # gsid = '1XdDOKK8i1fPpw1UnmTQGydYDSsxZj-OvuvYCdBDXmZY'
+    # gsid = '1sC26FL_R-zPWm9EMGaNEFgU0ClDJFeb8CqaUTCPgA9U'
+
 
     # H_3 action
     if on == 'team':

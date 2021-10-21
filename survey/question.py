@@ -61,25 +61,24 @@ def get_survey_question_list(self, spreadsheet, survey_worksheet_name, module):
 
     # S_
     question_list_df = question_list_df.filter(regex='^(?!choiceId_|specialAnswer_|choice_).*', axis=1)
-
-    survey_question_list = question_list_df.drop(['answerStatusType'], axis=1).to_dict('records')
-
     question_list_df.index = question_list_df.questionId
-    answer_list = {questionId: {} for questionId in question_list_df.questionId}
-    answer_status_list = question_list_df[['answerStatusType']].to_dict('index')
+
+    survey_question_dict = question_list_df.drop(['answerStatusType'], axis=1).to_dict('index')
+    answer_dict = {questionId: {} for questionId in question_list_df.questionId}
+    answer_status_dict = question_list_df[['answerStatusType']].to_dict('index')
 
     # S_ 查址模組若有設定中止訪問題號，需新增預設答案
     if module == 'visitReport':
-        answer_list['break_interview'] = {
+        answer_dict['break_interview'] = {
             'type': 'string',
             'withNote': False,
             'stringValue': '0',
         }
 
     return {
-        'questionList': survey_question_list,
-        'initialAnswerList': answer_list,
-        'initialAnswerStatusList': answer_status_list,
+        'questionMap': survey_question_dict,
+        'answerMap': answer_dict,
+        'answerStatusMap': answer_status_dict,
     }
 
 
@@ -122,16 +121,16 @@ def get_recode_question_list(self, spreadsheet, survey_worksheet_name):
         self.set_where(2, '檢查題目編號不重複', error=True)
 
     # S_
-    survey_question_list = question_list_df.to_dict('records')
-
     question_list_df.index = question_list_df.questionId
-    answer_list = {questionId: {} for questionId in question_list_df.questionId}
-    answer_status_list = question_list_df[['answerStatusType']].to_dict('index')
+
+    survey_question_dict = question_list_df.to_dict('index')
+    answer_dict = {questionId: {} for questionId in question_list_df.questionId}
+    answer_status_dict = question_list_df[['answerStatusType']].to_dict('index')
 
     return {
-        'questionList': survey_question_list,
-        'initialAnswerList': answer_list,
-        'initialAnswerStatusList': answer_status_list,
+        'questionMap': survey_question_dict,
+        'answerMap': answer_dict,
+        'answerStatusMap': answer_status_dict,
     }
 
 

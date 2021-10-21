@@ -29,6 +29,7 @@ else:
 
 def set_where(self, index=0, str='', error=False):
     self.where[index] = str
+    print(str)
 
     if index != 4:
         self.where[(index + 1):] = [''] * (4 - index)

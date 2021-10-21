@@ -29,7 +29,7 @@ def update_respondent_list(self):
     self.survey_dict['interviewerList'] = list(self.interviewer_list)
 
     self.set_where(1, '新增受訪者至資料庫中')
-    self.batch_set_by_interviewer(respondent_df, 'interviewerRespondentList')
+    self.batch_set_by_interviewer(respondent_df, 'interviewerRespondentList', type='map')
 
 
 def update_survey_question(self):

@@ -74,7 +74,7 @@ def get_project_dict_from_field(self, field, field_value):
     return result_dict
 
 
-def batch_set_by_interviewer(self, df, document):
+def batch_set_by_interviewer(self, df, document, type='list'):
     result_dict = {
         'surveyId': self.gsid,
         'projectId': self.project_gsid,
@@ -87,7 +87,10 @@ def batch_set_by_interviewer(self, df, document):
         if len(subset_df):
             subset_df.drop(columns='interviewerId', inplace=True)
             result_dict['interviewerId'] = interviewer_id
-            result_dict['list'] = subset_df.to_dict('records')
+            if type == 'list':
+                result_dict['list'] = subset_df.to_dict('records')
+            elif type == 'map':
+                result_dict['map'] = subset_df.to_dict('index')
 
             doc_ref = self.db.document(document, f'{interviewer_id}_{self.gsid}')
             self.batch.set(doc_ref, result_dict)
