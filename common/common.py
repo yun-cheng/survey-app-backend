@@ -1,6 +1,7 @@
 import json
 import string
 import os
+from datetime import datetime
 import uuid
 from collections import defaultdict
 import pytz
@@ -19,6 +20,9 @@ from google.cloud import storage
 from google.cloud.firestore_v1 import DocumentReference, CollectionReference, Query
 from google.cloud.storage.bucket import Bucket
 
+
+#
+app_version = '211027_1'
 
 # NOTE 切換 prod/dev
 if os.environ['ENV'] == 'dev':
@@ -112,8 +116,43 @@ def dict_from_storage(self, filepath):
     return dict
 
 
+def df_to_storage(self, df, filepath):
+    blob = self.blob(filepath)
+    blob.upload_from_string(
+        data=df.to_csv(index=False),
+        content_type='text/csv'
+    )
+    blob.make_public()
+
+    return blob.public_url
+
+
 DocumentReference.doc_to_dict = doc_to_dict
 CollectionReference.query_to_dict = query_to_dict
 Query.query_to_dict = query_to_dict
 Bucket.dict_from_storage = dict_from_storage
 Bucket.dict_to_storage = dict_to_storage
+Bucket.df_to_storage = df_to_storage
+
+
+def set_cell(worksheet, pos, value, url=None, font_size=None, color=None, background_color=None,
+             horizontal_alignment=None):
+    color_map = {
+        'red': (1, 0, 0, 0),
+        'blue': (0, 0, 1, 0),
+        'yellow': (1, 1, 0, 0),
+        'white': (1, 1, 1, 0)
+    }
+    cell = pygsheets.Cell(pos, worksheet=worksheet)
+    if color:
+        cell.set_text_format('foregroundColor', color_map[color])
+    if background_color:
+        cell.color = color_map[background_color]
+    if font_size:
+        cell.set_text_format('fontSize', font_size)
+    if horizontal_alignment == 'center':
+        cell.set_horizontal_alignment(pygsheets.custom_types.HorizontalAlignment.CENTER)
+    if url:
+        cell.set_value(f'=HYPERLINK("{url}", "{value}")')
+    else:
+        cell.set_value(value)

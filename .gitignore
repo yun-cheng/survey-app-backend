@@ -8,3 +8,5 @@ __pycache__/*
 
 .vscode/*
 *.code-workspace
+/files/prj_2010621.csv
+/play.py

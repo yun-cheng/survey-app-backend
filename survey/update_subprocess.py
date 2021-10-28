@@ -1,6 +1,62 @@
 from common.common import *
 
 
+def transfer_respondents(self):
+    self.set_where(0, '轉出入受訪者')
+
+    self.set_where(1, '提取受訪者分頁中的資料表')
+    respondent_df = get_worksheet_df(self.spreadsheet,
+                                     worksheet_title=self.info_dict['respondentWorksheetName'])
+    respondent_df.columns = self.translate(respondent_df.columns.to_series(), '受訪地址')
+
+    last_cell = f'G{len(respondent_df) + 1}'
+
+    # S_
+    worksheet = self.spreadsheet.worksheet_by_title(self.info_dict['respondentWorksheetName'])
+
+    # S_ 排序並集中須轉出入的 cases
+    worksheet.sort_range('A2', last_cell, basecolumnindex=6)
+
+    # S_ 重新提取
+    respondent_df = get_worksheet_df(self.spreadsheet,
+                                     worksheet_title=self.info_dict['respondentWorksheetName'])
+    respondent_df.columns = self.translate(respondent_df.columns.to_series(), '受訪地址')
+
+    respondent_df = respondent_df[respondent_df.transferToId != '']
+
+    # S_ 轉移 responses
+    for i, row in respondent_df.iterrows():
+        response_dict = self.get_respondent_response_dict(row['respondentId'], row['interviewerId'])
+
+        # new_response_dict = {}
+        for k, response in response_dict.items():
+            response_id = str(uuid.uuid4())
+            response['responseId'] = response_id
+            response['tempResponseId'] = response_id
+            response['ticketId'] = response_id
+            response['interviewerId'] = row['transferToId']
+            if 'originalInterviewerId' not in response or not response['originalInterviewerId']:
+                response['originalInterviewerId'] = row['interviewerId']
+
+            # new_response_dict[response_id] = response
+            doc_ref = self.db.document('surveyResponse', response_id)
+            self.batch.set(doc_ref, response)
+
+    self.batch.commit()
+
+    # S_
+    last_transfer_row = len(respondent_df) + 1
+    transfer_to_id_list = respondent_df[['transferToId']].values.tolist()
+
+    # S_ 取代訪員 ID
+    worksheet.update_values(f'A2:A{last_transfer_row}', transfer_to_id_list)
+
+    # S_ 清空轉出至訪員 ID
+    worksheet.clear('G2', f'G{last_transfer_row}', fields='*')
+
+    # S_ 照受訪者 ID 排序
+    worksheet.sort_range('A2', last_cell, basecolumnindex=1)
+
 def update_respondent_list(self):
     self.set_where(0, '處理受訪者分頁內容')
 
@@ -69,6 +125,7 @@ def update_reference_list(self):
 
         for reference_key, question_id_list in reference_dict.items():
             # S_ 從資料庫篩出所有這個 reference_key 所對應的 responses
+            # FIXME 不能是當前 survey
             response_dict = self.get_response_dict(reference_key[0], reference_key[1])
 
             for k, response in response_dict.items():

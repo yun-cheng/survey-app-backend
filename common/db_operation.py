@@ -56,6 +56,28 @@ def get_response_dict(self, survey_id, module_type):
     return result_dict
 
 
+def get_all_responses_dict(self):
+    query = self.db.collection('surveyResponse') \
+        .where('surveyId', '==', self.gsid) \
+        .where('responseStatus', '==', 'finished') \
+        .where('isDeleted', '==', False)
+    result_dict = query.query_to_dict()
+
+    return result_dict
+
+
+def get_respondent_response_dict(self, respondent_id, interviewer_id):
+    query = self.db.collection('surveyResponse') \
+        .where('projectId', '==', self.project_gsid) \
+        .where('surveyId', '==', self.gsid) \
+        .where('respondentId', '==', respondent_id) \
+        .where('interviewerId', '==', interviewer_id) \
+        .where('isDeleted', '==', False)
+    result_dict = query.query_to_dict()
+
+    return result_dict
+
+
 def get_survey_dict_from_field(self, field, field_value):
     query = self.db.collection('survey') \
         .where('projectId', '==', self.project_gsid) \

@@ -66,21 +66,36 @@ def link_url(self):
         worksheet.update_value('A5', f'=HYPERLINK("{delete_url}", "刪除此單位")')
 
     elif self.type == 'survey':
-        # S_1 '更新此問卷設定' 連結
-        update_url = f'{main_url}?action=update&on=survey&gsid={gsid}'
-        worksheet.update_value('A3', f'=HYPERLINK("{update_url}", "更新此問卷設定")')
+        n_row = worksheet.rows
+        if n_row < 15:
+            worksheet.add_rows(15 - n_row)
+        elif n_row > 15:
+            worksheet.delete_rows(2, n_row - 15)
 
-        # S_2 '下載完訪資料' 連結
-        update_result_url = f'{main_url}?action=update&on=survey_response&gsid={gsid}'
-        worksheet.update_value('A4', f'=HYPERLINK("{update_result_url}", "下載完訪資料")')
+        if worksheet.get_value(f'A{n_row}') != app_version:
+            worksheet.clear('A2', f'A{n_row}', fields='*')
 
-        # S_3 '刪除此問卷設定' 連結
-        delete_url = f'{main_url}?action=delete&on=survey&gsid={gsid}'
-        worksheet.update_value('A6', f'=HYPERLINK("{delete_url}", "刪除此問卷設定")')
+            # S_1 '更新此問卷設定' 連結
+            update_url = f'{main_url}?action=update&on=survey&gsid={gsid}'
+            set_cell(worksheet, 'A3', '更新此問卷設定', url=update_url, font_size=36,
+                     background_color='yellow', horizontal_alignment='center')
 
-        # S_4 '刪除完訪資料' 連結
-        delete_result_url = f'{main_url}?action=delete&on=survey_response&gsid={gsid}'
-        worksheet.update_value('A7', f'=HYPERLINK("{delete_result_url}", "刪除完訪資料")')
+            # S_2 '更新下載資料連結' 連結
+            update_result_url = f'{main_url}?action=update_download_files&on=survey&gsid={gsid}'
+            set_cell(worksheet, 'A4', '更新下載資料連結', url=update_result_url, font_size=36,
+                     background_color='yellow', horizontal_alignment='center')
+
+            # # S_3 '刪除此問卷設定' 連結
+            # delete_url = f'{main_url}?action=delete&on=survey&gsid={gsid}'
+            # set_cell(worksheet, 'A6', '刪除此問卷設定', url=delete_url, font_size=36, background_color='red',
+            #          color='white', horizontal_alignment='center')
+            #
+            # # S_4 '刪除完訪資料' 連結
+            # delete_result_url = f'{main_url}?action=delete&on=survey_response&gsid={gsid}'
+            # set_cell(worksheet, 'A7', '刪除完訪資料', url=delete_result_url, font_size=36,
+            #          background_color='red', color='white', horizontal_alignment='center')
+
+            worksheet.update_value(f'A{n_row}', app_version)
 
     elif self.type == 'module':
         # S_ '更新此問卷模組設定' 連結
