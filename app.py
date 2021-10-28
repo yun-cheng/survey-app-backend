@@ -35,7 +35,6 @@ def main():
     # gsid = '1XdDOKK8i1fPpw1UnmTQGydYDSsxZj-OvuvYCdBDXmZY'
     # gsid = '1sC26FL_R-zPWm9EMGaNEFgU0ClDJFeb8CqaUTCPgA9U'
 
-
     # H_3 action
     if on == 'team':
         target = Team(gsheets=gsheets, db=db)
