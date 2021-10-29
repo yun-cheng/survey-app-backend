@@ -22,7 +22,8 @@ from google.cloud.storage.bucket import Bucket
 
 
 #
-app_version = '211027_1'
+app_version = '211029_1'
+tw_tz = pytz.timezone('Asia/Taipei')
 
 # NOTE 切換 prod/dev
 if os.environ['ENV'] == 'dev':

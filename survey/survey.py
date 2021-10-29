@@ -165,8 +165,16 @@ class Survey:
 
             info_df = pd.DataFrame.from_dict(info_list)
 
+            # S_ datetime
+            info_df['createdTimeStamp'] = pd.to_datetime(info_df.createdTimeStamp,unit='us')\
+                .dt.tz_localize('UTC').dt.tz_convert('Asia/Taipei')\
+                .dt.strftime('%Y-%m-%d %H:%M:%S')
+            info_df['lastChangedTimeStamp'] = pd.to_datetime(info_df.lastChangedTimeStamp,unit='us')\
+                .dt.tz_localize('UTC').dt.tz_convert('Asia/Taipei')\
+                .dt.strftime('%Y-%m-%d %H:%M:%S')
+
             # S_ upload
-            now = datetime.now().strftime('%Y-%m-%d_%H.%M.%S')
+            now = datetime.now(tw_tz).strftime('%Y-%m-%d_%H.%M.%S')
 
             info_path = f'response/{self.gsid}/{now}/responses_info_{now}.csv'
             info_url = self.bucket.df_to_storage(info_df, info_path)
@@ -180,7 +188,6 @@ class Survey:
                      horizontal_alignment='center')
             set_cell(worksheet, 'A7', '下載回覆資訊', url=info_url, font_size=24,
                      horizontal_alignment='center')
-
 
             return f'更新下載資料成功！請關閉視窗，避免頁面重整後重新送出更新請求。<br/><br/>' \
                    f'執行歷程：{self.where_list_to_str()}'
