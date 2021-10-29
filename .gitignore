@@ -10,3 +10,4 @@ __pycache__/*
 *.code-workspace
 /files/prj_2010621.csv
 /play.py
+/cors.json

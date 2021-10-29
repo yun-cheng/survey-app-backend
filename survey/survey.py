@@ -161,17 +161,46 @@ class Survey:
                 data = {k: response[k] for k in data_keys}
 
                 answer_df = pd.concat([pd.DataFrame(data, index=answer_df.index), answer_df], axis=1)
-                response_df = response_df.append(answer_df)
+                response_df = response_df.append(answer_df, ignore_index=True)
 
             info_df = pd.DataFrame.from_dict(info_list)
 
-            # S_ datetime
+            info_df.sort_values(
+                ['respondentId', 'lastChangedTimeStamp'],
+                ignore_index=True,
+                inplace=True)
+
+            # S_ timestamp
             info_df['createdTimeStamp'] = pd.to_datetime(info_df.createdTimeStamp,unit='us')\
                 .dt.tz_localize('UTC').dt.tz_convert('Asia/Taipei')\
                 .dt.strftime('%Y-%m-%d %H:%M:%S')
             info_df['lastChangedTimeStamp'] = pd.to_datetime(info_df.lastChangedTimeStamp,unit='us')\
                 .dt.tz_localize('UTC').dt.tz_convert('Asia/Taipei')\
                 .dt.strftime('%Y-%m-%d %H:%M:%S')
+
+            # S_ note
+            note_df = response_df[response_df.note.notnull()]
+            note_df['note'] = note_df.note.apply(lambda x:x.items())
+            note_df = note_df.explode('note')
+            note_df[['noteOf', 'answerValue']] = note_df.note.tolist()
+            note_df.drop(columns='note', inplace=True)
+            note_df['isNote'] = 1
+
+            response_df.drop(columns='note', inplace=True)
+            response_df['isNote'] = 0
+
+            response_df = response_df.append(note_df, ignore_index=True)
+
+            response_df.sort_values(
+                ['respondentId', 'moduleType', 'responseId', 'questionId', 'isNote', 'noteOf'],
+                ignore_index=True,
+                inplace=True)
+
+            response_df.reorder_columns('answerValue', -1)
+
+            # TODO tranform to wide form
+
+            # FIXME recode module answer value
 
             # S_ upload
             now = datetime.now(tw_tz).strftime('%Y-%m-%d_%H.%M.%S')

@@ -157,3 +157,14 @@ def set_cell(worksheet, pos, value, url=None, font_size=None, color=None, backgr
         cell.set_value(f'=HYPERLINK("{url}", "{value}")')
     else:
         cell.set_value(value)
+
+
+def reorder_columns(self, col_name, position):
+    temp_col = self[col_name]
+    self.drop(columns=[col_name], inplace=True)
+    if position < 0:
+        position = len(self.columns) + 1 + position
+    self.insert(loc=position, column=col_name, value=temp_col)
+
+
+pd.DataFrame.reorder_columns = reorder_columns
