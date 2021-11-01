@@ -160,27 +160,53 @@ class Survey:
 
                 data = {k: response[k] for k in data_keys}
 
-                answer_df = pd.concat([pd.DataFrame(data, index=answer_df.index), answer_df], axis=1)
+                answer_df = pd.concat([pd.DataFrame(data, index=answer_df.index), answer_df],
+                                      axis=1)
                 response_df = response_df.append(answer_df, ignore_index=True)
 
+            # S_ info_df
             info_df = pd.DataFrame.from_dict(info_list)
 
             info_df.sort_values(
-                ['respondentId', 'lastChangedTimeStamp'],
+                ['respondentId', 'moduleType', 'lastChangedTimeStamp'],
                 ignore_index=True,
                 inplace=True)
 
+            # S_ 模組內編號
+            info_df['idInGroup'] = info_df \
+                                       .groupby(['respondentId', 'moduleType'], as_index=False) \
+                                       .cumcount() + 1
+
+            # S_ 各模組最後一筆，以及查址模組全部，是真正需要的資料
+            info_df['keep'] = 0
+
+            info_df.loc[info_df.groupby(['respondentId', 'moduleType'], as_index=False)
+                            .nth(-1).index, 'keep'] = 1
+
+            info_df.loc[(info_df.responseStatus == 'finished') &
+                        (info_df.moduleType == 'visitReport'), 'keep'] = 1
+
             # S_ timestamp
-            info_df['createdTimeStamp'] = pd.to_datetime(info_df.createdTimeStamp,unit='us')\
-                .dt.tz_localize('UTC').dt.tz_convert('Asia/Taipei')\
+            info_df['createdTimeStamp'] = pd.to_datetime(info_df.createdTimeStamp, unit='us') \
+                .dt.tz_localize('UTC') \
+                .dt.tz_convert('Asia/Taipei') \
                 .dt.strftime('%Y-%m-%d %H:%M:%S')
-            info_df['lastChangedTimeStamp'] = pd.to_datetime(info_df.lastChangedTimeStamp,unit='us')\
-                .dt.tz_localize('UTC').dt.tz_convert('Asia/Taipei')\
+            info_df['lastChangedTimeStamp'] = pd.to_datetime(info_df.lastChangedTimeStamp,
+                                                             unit='us') \
+                .dt.tz_localize('UTC') \
+                .dt.tz_convert('Asia/Taipei') \
                 .dt.strftime('%Y-%m-%d %H:%M:%S')
+
+            # S_ 完成進度
+            progress_df = info_df[info_df.responseStatus == 'finished']
+            progress_df = progress_df.groupby('respondentId')['moduleType'].value_counts() \
+                .reset_index(name='count')
+            progress_df = pd.pivot_table(progress_df, index='respondentId', columns='moduleType',
+                                         values='count', fill_value=0).reset_index()
 
             # S_ note
             note_df = response_df[response_df.note.notnull()]
-            note_df['note'] = note_df.note.apply(lambda x:x.items())
+            note_df['note'] = note_df.note.apply(lambda x: x.items())
             note_df = note_df.explode('note')
             note_df[['noteOf', 'answerValue']] = note_df.note.tolist()
             note_df.drop(columns='note', inplace=True)
@@ -198,7 +224,38 @@ class Survey:
 
             response_df.reorder_columns('answerValue', -1)
 
-            # TODO tranform to wide form
+            # S_ long to wide
+            keep_df = info_df.loc[info_df.keep == 1, ['responseId', 'idInGroup']]
+
+            wide_df = keep_df.merge(response_df, how='left')
+
+            wide_df.drop(columns=['responseStatus', 'answerStatus'], inplace=True)
+
+            def wide_question_id(row):
+                question_id = row['questionId']
+                if row['moduleType'] == 'visitReport':
+                    question_id = f"{row['moduleType']}__{row['idInGroup']}__{question_id}"
+                else:
+                    question_id = f"{row['moduleType']}__{question_id}"
+
+                if row['isNote']:
+                    question_id += '__note_' + row['noteOf']
+
+                return question_id
+
+            wide_df['questionId'] = wide_df.apply(wide_question_id, axis=1)
+
+            wide_df.drop(columns=['responseId', 'idInGroup', 'moduleType', 'isNote', 'noteOf'],
+                         inplace=True)
+
+            wide_df.sort_values(
+                ['respondentId', 'questionId'],
+                ignore_index=True,
+                inplace=True)
+
+            wide_df = wide_df.pivot(
+                index=['respondentId', 'surveyId'], columns='questionId', values='answerValue'). \
+                reset_index()
 
             # FIXME recode module answer value
 
@@ -209,13 +266,21 @@ class Survey:
             info_url = self.bucket.df_to_storage(info_df, info_path)
             response_path = f'response/{self.gsid}/{now}/module_responses_{now}.csv'
             response_url = self.bucket.df_to_storage(response_df, response_path)
+            progress_path = f'response/{self.gsid}/{now}/respondent_progress_{now}.csv'
+            progress_url = self.bucket.df_to_storage(progress_df, progress_path)
+            wide_path = f'response/{self.gsid}/{now}/respondent_responses_{now}.csv'
+            wide_url = self.bucket.df_to_storage(wide_df, wide_path)
 
             # S_
             worksheet = self.spreadsheet.worksheet_by_title('說明')
 
-            set_cell(worksheet, 'A6', '下載回覆', url=response_url, font_size=24,
+            set_cell(worksheet, 'A6', '下載模組回覆', url=response_url, font_size=24,
                      horizontal_alignment='center')
-            set_cell(worksheet, 'A7', '下載回覆資訊', url=info_url, font_size=24,
+            set_cell(worksheet, 'A7', '下載受訪者回覆', url=wide_url, font_size=24,
+                     horizontal_alignment='center')
+            set_cell(worksheet, 'A8', '下載回覆資訊', url=info_url, font_size=24,
+                     horizontal_alignment='center')
+            set_cell(worksheet, 'A9', '下載受訪者進度', url=progress_url, font_size=24,
                      horizontal_alignment='center')
 
             return f'更新下載資料成功！請關閉視窗，避免頁面重整後重新送出更新請求。<br/><br/>' \
