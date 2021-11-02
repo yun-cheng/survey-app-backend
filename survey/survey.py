@@ -162,7 +162,7 @@ class Survey:
                 for k, v in response['answerStatusMap'].items():
                     response['answerMap'][k].update(
                         {'answerStatus': v['answerStatusType'],
-                         'lastChangedTimeStamp': v['lastChangedTimeStamp']})
+                         'lastChangedTimeStamp': v.get('lastChangedTimeStamp', None)})
 
                 answer_df = pd.DataFrame.from_dict(response['answerMap'], orient='index')
                 answer_df.reset_index(inplace=True)
