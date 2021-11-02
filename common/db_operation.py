@@ -146,3 +146,12 @@ def batch_set_response(self, df):
 def set_survey(self):
     self.bucket.dict_to_storage(self.survey_dict, f'survey/{self.gsid}/try.json')
     self.bucket.dict_to_storage(self.survey_dict, f'survey/{self.gsid}/{self.gsid}.json')
+
+
+def batch_delete_responses(self):
+    remove_docs_list = self.db.collection('surveyResponse') \
+        .where('surveyId', '==', self.gsid) \
+        .where('isDeleted', '==', False).stream()
+
+    for doc in remove_docs_list:
+        self.batch.delete(doc.reference)

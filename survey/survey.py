@@ -30,7 +30,7 @@ class Survey:
     from common.translate import get_translate_df, translate
     from common.db_operation import get_team_dict, get_project_dict, get_survey_module_dict, \
         get_survey_dict, get_response_dict, get_all_responses_dict, get_respondent_response_dict, \
-        batch_set_by_interviewer, get_survey_dict_from_field, set_survey
+        batch_set_by_interviewer, get_survey_dict_from_field, set_survey, batch_delete_responses
 
     from .choice import create_choice_list, choice_import_to_df
     from .expression import reformat_expression
@@ -118,6 +118,21 @@ class Survey:
                    f'錯誤出現在：<br/>{self.where_to_str()}<br/><br/>' \
                    f'執行歷程：{self.where_list_to_str()}'
 
+    def delete_all_responses(self, gsid):
+        try:
+            self.init(gsid)
+
+            self.batch_delete_responses()
+            self.batch.commit()
+
+            return f'清除資料庫所有回覆成功！請關閉視窗，避免頁面重整後重新送出更新請求。<br/><br/>' \
+                   f'執行歷程：{self.where_list_to_str()}'
+
+        except:
+            return f'清除資料庫所有回覆失敗！請關閉視窗，避免頁面重整後重新送出更新請求。<br/><br/>' \
+                   f'錯誤出現在：<br/>{self.where_to_str()}<br/><br/>' \
+                   f'執行歷程：{self.where_list_to_str()}'
+
     def update_download_files(self, gsid):
         try:
             self.init(gsid)
@@ -145,7 +160,9 @@ class Survey:
                 info_list.append(info)
 
                 for k, v in response['answerStatusMap'].items():
-                    response['answerMap'][k].update({'answerStatus': v['answerStatusType']})
+                    response['answerMap'][k].update(
+                        {'answerStatus': v['answerStatusType'],
+                         'lastChangedTimeStamp': v['lastChangedTimeStamp']})
 
                 answer_df = pd.DataFrame.from_dict(response['answerMap'], orient='index')
                 answer_df.reset_index(inplace=True)
@@ -156,13 +173,21 @@ class Survey:
                 answer_df['choiceListValue'] = answer_df.choiceListValue.apply(
                     lambda x: [y['id'] for y in x] if x is not None else x)
                 answer_df['answerValue'] = answer_df.apply(get_answer_value, axis=1)
-                answer_df = answer_df[['questionId', 'answerStatus', 'answerValue', 'note']]
+
+                answer_df = answer_df[['questionId', 'answerStatus', 'answerValue', 'note',
+                                       'lastChangedTimeStamp']]
 
                 data = {k: response[k] for k in data_keys}
 
                 answer_df = pd.concat([pd.DataFrame(data, index=answer_df.index), answer_df],
                                       axis=1)
                 response_df = response_df.append(answer_df, ignore_index=True)
+
+            response_df['lastChangedTimeStamp'] = pd.to_datetime(response_df.lastChangedTimeStamp,
+                                                                 unit='us') \
+                .dt.tz_localize('UTC') \
+                .dt.tz_convert('Asia/Taipei') \
+                .dt.strftime('%Y-%m-%d %H:%M:%S')
 
             # S_ info_df
             info_df = pd.DataFrame.from_dict(info_list)
@@ -223,13 +248,15 @@ class Survey:
                 inplace=True)
 
             response_df.reorder_columns('answerValue', -1)
+            response_df.reorder_columns('lastChangedTimeStamp', -1)
 
             # S_ long to wide
             keep_df = info_df.loc[info_df.keep == 1, ['responseId', 'idInGroup']]
 
             wide_df = keep_df.merge(response_df, how='left')
 
-            wide_df.drop(columns=['responseStatus', 'answerStatus'], inplace=True)
+            wide_df.drop(columns=['responseStatus', 'answerStatus', 'lastChangedTimeStamp'],
+                         inplace=True)
 
             def wide_question_id(row):
                 question_id = row['questionId']

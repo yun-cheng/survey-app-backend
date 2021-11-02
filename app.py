@@ -59,6 +59,8 @@ def main():
             return target.transfer(gsid=gsid)
         elif on == 'survey' and action == 'update_download_files' and gsid:
             return target.update_download_files(gsid=gsid)
+        elif on == 'survey' and action == 'delete_all_responses' and gsid:
+            return target.delete_all_responses(gsid=gsid)
 
     return '失敗了....'
 
