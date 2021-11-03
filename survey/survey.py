@@ -146,6 +146,8 @@ class Survey:
                     return row['intValue']
                 elif row['type'] == 'choiceList':
                     return row['choiceListValue']
+                else:
+                    return None
 
             response_dict = self.get_all_responses_dict()
 
@@ -167,14 +169,13 @@ class Survey:
                 answer_df = pd.DataFrame.from_dict(response['answerMap'], orient='index')
                 answer_df.reset_index(inplace=True)
                 answer_df.rename(columns={'index': 'questionId', 'noteMap': 'note'}, inplace=True)
-                answer_df = answer_df[answer_df.type != ''].reset_index(drop=True)
                 answer_df['choiceValue'] = answer_df.choiceValue.apply(
                     lambda x: x['id'] if x is not None else x)
                 answer_df['choiceListValue'] = answer_df.choiceListValue.apply(
                     lambda x: [y['id'] for y in x] if x is not None else x)
                 answer_df['answerValue'] = answer_df.apply(get_answer_value, axis=1)
 
-                answer_df = answer_df[['questionId', 'answerStatus', 'answerValue', 'note',
+                answer_df = answer_df[['questionId', 'type', 'answerStatus', 'answerValue', 'note',
                                        'lastChangedTimeStamp']]
 
                 data = {k: response[k] for k in data_keys}
@@ -183,6 +184,7 @@ class Survey:
                                       axis=1)
                 response_df = response_df.append(answer_df, ignore_index=True)
 
+            response_df = response_df[response_df.type != ''].reset_index(drop=True)
             response_df['lastChangedTimeStamp'] = pd.to_datetime(response_df.lastChangedTimeStamp,
                                                                  unit='us') \
                 .dt.tz_localize('UTC') \
@@ -221,6 +223,23 @@ class Survey:
                 .dt.tz_localize('UTC') \
                 .dt.tz_convert('Asia/Taipei') \
                 .dt.strftime('%Y-%m-%d %H:%M:%S')
+
+            # S_ audio link
+            def public_audio_link(row):
+                responseId = row['responseId']
+                audio_link = ''
+                if row['moduleType'] == 'main':
+                    blob = self.bucket.blob(f'audio/{responseId}/{responseId}.m4a')
+                    try:
+                        if blob.exists():
+                            blob.make_public()
+                            audio_link = blob.public_url
+                    except:
+                        audio_link = ''
+
+                return audio_link
+
+            info_df['audioLink'] = info_df.apply(public_audio_link, axis=1)
 
             # S_ 完成進度
             progress_df = info_df[info_df.responseStatus == 'finished']

@@ -63,6 +63,16 @@ def get_all_responses_dict(self):
         .where('isDeleted', '==', False)
     result_dict = query.query_to_dict()
 
+    query = self.db.collection('surveyResponse') \
+        .where('surveyId', '==', self.gsid) \
+        .where('moduleType', '==', 'main') \
+        .where('responseStatus', '==', 'answering') \
+        .where('editFinished', '==', True) \
+        .where('isDeleted', '==', False)
+    result_dict_1 = query.query_to_dict()
+
+    result_dict.update(result_dict_1)
+
     return result_dict
 
 
