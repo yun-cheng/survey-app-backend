@@ -285,7 +285,7 @@ class Survey:
                     question_id = f"{row['moduleType']}__{question_id}"
 
                 if row['isNote']:
-                    question_id += '__note_' + row['noteOf']
+                    question_id += '__note_' + str(row['noteOf'])
 
                 return question_id
 
