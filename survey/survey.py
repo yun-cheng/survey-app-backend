@@ -275,6 +275,9 @@ class Survey:
 
             wide_df = keep_df.merge(response_df, how='left')
 
+            # NOTE 去掉只點進問卷，沒有任何作答
+            wide_df = wide_df[wide_df.surveyId.notnull()].reset_index()
+
             wide_df.drop(columns=['responseStatus', 'answerStatus', 'lastChangedTimeStamp'],
                          inplace=True)
 
@@ -292,8 +295,8 @@ class Survey:
 
             wide_df['questionId'] = wide_df.apply(wide_question_id, axis=1)
 
-            wide_df.drop(columns=['responseId', 'idInGroup', 'moduleType', 'isNote', 'noteOf'],
-                         inplace=True)
+            wide_df.drop(columns=['responseId', 'idInGroup', 'interviewerId', 'moduleType',
+                                  'isNote', 'noteOf'], inplace=True)
 
             wide_df.sort_values(
                 ['respondentId', 'questionId'],
