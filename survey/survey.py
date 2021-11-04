@@ -154,7 +154,8 @@ class Survey:
             info_keys = ['responseId', 'respondentId', 'moduleType', 'responseStatus',
                          'interviewerId', 'surveyId', 'deviceId',
                          'createdTimeStamp', 'lastChangedTimeStamp']
-            data_keys = ['responseId', 'respondentId', 'moduleType', 'responseStatus', 'surveyId']
+            data_keys = ['responseId', 'respondentId', 'moduleType', 'responseStatus',
+                         'interviewerId', 'surveyId']
             response_df = pd.DataFrame()
             info_list = []
             for response_id, response in response_dict.items():
