@@ -251,16 +251,17 @@ class Survey:
 
             # S_ note
             note_df = response_df[response_df.note.notnull()]
-            note_df['note'] = note_df.note.apply(lambda x: x.items())
-            note_df = note_df.explode('note')
-            note_df[['noteOf', 'answerValue']] = note_df.note.tolist()
-            note_df.drop(columns='note', inplace=True)
-            note_df['isNote'] = 1
-
             response_df.drop(columns='note', inplace=True)
             response_df['isNote'] = 0
+            response_df['noteOf'] = None
 
-            response_df = response_df.append(note_df, ignore_index=True)
+            if len(note_df):
+                note_df['note'] = note_df.note.apply(lambda x: x.items())
+                note_df = note_df.explode('note')
+                note_df[['noteOf', 'answerValue']] = note_df.note.tolist()
+                note_df.drop(columns='note', inplace=True)
+                note_df['isNote'] = 1
+                response_df = response_df.append(note_df, ignore_index=True)
 
             response_df.sort_values(
                 ['respondentId', 'moduleType', 'responseId', 'questionId', 'isNote', 'noteOf'],

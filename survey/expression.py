@@ -37,6 +37,11 @@ def reformat_expression(self, row, column):
                 value = split_element[2]
                 value = ast.literal_eval(value)
 
+                # S_ 如果 question_id 中有 *，則略過
+                if '*' in question_id:
+                    full_expression_body += '1 == 1'
+                    continue
+
                 if isinstance(value, int) or isinstance(value, float):
                     value = {
                         'type': 'string',
