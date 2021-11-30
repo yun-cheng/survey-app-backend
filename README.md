@@ -24,3 +24,16 @@
 
   - [設定內容參考](https://firebase.google.com/docs/rules/basics)
   - [deploy參考](https://firebase.google.com/docs/rules/manage-deploy)
+
+## Firestore 設定
+
+- Rules 設定：
+  1. 初始化 Firebase firestore 時會自動創立 firestore.rules
+  2. 編輯後送出指令 `firebase deploy --only firestore`
+
+  - [設定內容參考](https://firebase.google.com/docs/rules/basics)
+  - [deploy參考](https://firebase.google.com/docs/rules/manage-deploy)
+
+## 注意事項
+
+- 有關 Firebase 的設定需先 cd 進 firebase 資料夾
