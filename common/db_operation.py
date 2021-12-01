@@ -159,9 +159,12 @@ def set_survey(self):
 
 
 def batch_delete_responses(self):
-    remove_docs_list = self.db.collection('surveyResponse') \
+    query_docs = self.db.collection('surveyResponse') \
         .where('surveyId', '==', self.gsid) \
         .where('isDeleted', '==', False).stream()
+    delete_docs(query_docs)
 
-    for doc in remove_docs_list:
-        self.batch.delete(doc.reference)
+
+def delete_docs(docs):
+    for doc in docs:
+        doc.reference.delete()

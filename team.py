@@ -1,10 +1,13 @@
 from common.common import *
+from common.db_operation import delete_docs
 
 
 class Team:
-    def __init__(self, gsheets, db):
+    def __init__(self, gsheets, db, bucket):
         self.gsheets = gsheets
         self.db = db
+        self.bucket = bucket
+        self.batch = self.db.batch()
         self.gsid = ''
         self.type = 'team'
         self.template_id = '1VRGeK8m-w_ZCjg1SDQ74TZ7jpHsRiTiI3AcD54I5FC8'
@@ -62,30 +65,10 @@ class Team:
 
             # S_2-1 更新 Firestore: team 本身的資料
             # S_2-1-1 更新 Firestore: team/{teamId}
-            # TAG Firestore SET
-            # EXAMPLE
-            '''
-            team / {teamId} / {
-                teamId: '1VRGeK8m-w_ZCjg1SDQ74TZ7jpHsRiTiI3AcD54I5FC8',
-                customTeamId: 'demo_team_id',
-                teamName: '範例單位名稱'
-            }
-            '''
             team_ref = db.document('team', gsid)
             batch.set(team_ref, team_info_dict)
 
             # S_2-1-3 更新 Firestore: interviewerList/{teamId}
-            # TAG Firestore SET
-            # EXAMPLE
-            '''
-            interviewerList / {teamId} / {
-                {interviewerId}: {
-                    interviewerId: 'id001',
-                    interviewerPassword: 'password001',
-                    interviewerName: 'AAA'
-                }
-            }
-            '''
             interviewer_list_df = get_worksheet_df(spreadsheet, worksheet_title='訪員帳號', end='C')
             interviewer_map = df_to_dict(interviewer_list_df,
                                          new_column_names=['interviewerId', 'interviewerPassword', 'interviewerName'],
@@ -95,7 +78,6 @@ class Team:
 
             interviewer_map_ref = db.document('interviewerMap', gsid)
             # NOTE 後面要使用
-            old_interviewer_map = {}
             old_interviewer_map = interviewer_map_ref.doc_to_dict()
             batch.set(interviewer_map_ref, interviewer_map)
 
@@ -116,7 +98,7 @@ class Team:
                 delete_interviewer_id_list = []
 
             # S_2-2-1-2 新增的 interviewer
-            # TAG Firestore SET
+            # NOTE Firestore SET
             quiz_list_ref = db.document('quizList', gsid)
             quiz_list_dict = quiz_list_ref.doc_to_dict()
 
@@ -128,7 +110,7 @@ class Team:
                         batch.set(interviewer_quiz_ref, interviewer_quiz_dict)
 
             # S_2-2-1-3 刪除的 interviewer
-            # TAG Firestore DELETE
+            # NOTE Firestore DELETE
             interviewer_quiz_docs = db.collection('interviewerQuiz') \
                 .where('teamId', '==', gsid) \
                 .stream()
@@ -147,65 +129,66 @@ class Team:
 
     def delete(self, gsid):
         try:
-            batch = self.db.batch()
+            # S_ 刪除 team 本身的資料
+            # NOTE team/{teamId}
+            self.db.document('team', gsid).delete()
 
-            # S_1 刪除 Firestore: team 本身的資料
-            # S_1-1 刪除 Firestore: team/{teamId}
-            # TAG Firestore DELETE
-            team_ref = self.db.document('team', gsid)
-            batch.delete(team_ref)
+            # S_ 刪除底下的訪員帳號
+            # NOTE interviewerList/{teamId}
+            # NOTE interviewerMap/{teamId}
+            self.db.document('interviewerList', gsid).delete()
+            self.db.document('interviewerMap', gsid).delete()
 
-            # S_1-2 刪除 Firestore: teamList/teamList
-            # TAG Firestore UPDATE
-            team_list_ref = self.db.document('teamList', 'teamList')
-            batch.set(team_list_ref, {
-                gsid: firestore.DELETE_FIELD
-            }, merge=True)
+            # S_ 刪除底下的 project
+            # NOTE project/{projectId}
+            query_docs = self.db.collection('project') \
+                .where('teamId', '==', gsid) \
+                .stream()
+            delete_docs(query_docs)
 
-            # S_1-3 刪除 Firestore: interviewerList/{teamId}
-            # TAG Firestore DELETE
-            interviewer_list_ref = self.db.document('interviewerList', gsid)
-            batch.delete(interviewer_list_ref)
-
-            # S_2 刪除 Firestore: 相關聯的資料
-            # S_2-1 刪除 Firestore: project/{projectId}
-            # TAG Firestore DELETE
-            project_docs = self.db.collection('project') \
+            # S_ 刪除底下的 survey
+            # NOTE survey/{surveyId}
+            query_docs = self.db.collection('survey') \
                 .where('teamId', '==', gsid) \
                 .stream()
 
-            for doc in project_docs:
-                batch.delete(doc.reference)
+            for doc in query_docs:
+                doc.reference.delete()
 
-            # S_2-2 刪除 Firestore: projectList/{teamId}
-            # TAG Firestore DELETE
-            project_list_ref = self.db.document('projectList', gsid)
-            batch.delete(project_list_ref)
+                # S_ 刪除 storage 中的 survey
+                self.bucket.delete_file(f'survey/{doc.id}/try.json')
+                self.bucket.delete_file(f'survey/{doc.id}/{doc.id}.json')
 
-            # S_2-3 刪除 Firestore: quiz/{quizId}
-            # TAG Firestore DELETE
-            quiz_docs = self.db.collection('quiz') \
+            # S_ 刪除底下的 survey module
+            # NOTE surveyModule/{surveyModuleId}
+            query_docs = self.db.collection('surveyModule') \
                 .where('teamId', '==', gsid) \
                 .stream()
+            delete_docs(query_docs)
 
-            for doc in quiz_docs:
-                batch.delete(doc.reference)
-
-            # S_2-4 刪除 Firestore: quizList/{teamId}
-            # TAG Firestore DELETE
-            quiz_list_ref = self.db.document('quizList', gsid)
-            batch.delete(quiz_list_ref)
-
-            # S_2-5 刪除 Firestore: interviewerQuiz/{interviewerId_projectId}
-            # TAG Firestore DELETE
-            interviewer_quiz_docs = self.db.collection('interviewerQuiz') \
+            # S_ 刪除相關 referenceList
+            # NOTE interviewerReferenceList/{interviewerId_surveyId}
+            query_docs = self.db.collection('interviewerReferenceList') \
                 .where('teamId', '==', gsid) \
                 .stream()
+            delete_docs(query_docs)
 
-            for doc in interviewer_quiz_docs:
-                batch.delete(doc.reference)
+            # S_ 刪除相關 respondentList
+            # NOTE interviewerRespondentList/{interviewerId_surveyId}
+            query_docs = self.db.collection('interviewerRespondentList') \
+                .where('teamId', '==', gsid) \
+                .stream()
+            delete_docs(query_docs)
 
-            batch.commit()
+            # S_ 刪除 response
+            # NOTE surveyResponse
+            query_docs = self.db.collection('surveyResponse') \
+                .where('teamId', '==', gsid) \
+                .stream()
+            delete_docs(query_docs)
+
+            # TODO 刪除 audio
+
         except:
             return '刪除單位失敗!'
 

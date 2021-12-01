@@ -17,12 +17,13 @@ from firebase_admin import credentials
 from firebase_admin import firestore
 from flask import Flask, request
 from google.cloud import storage
+from google.cloud.exceptions import NotFound
 from google.cloud.firestore_v1 import DocumentReference, CollectionReference, Query
 from google.cloud.storage.bucket import Bucket
 
 
 #
-app_version = '211112_1'
+app_version = '211201_1'
 tw_tz = pytz.timezone('Asia/Taipei')
 
 # NOTE 切換 prod/dev
@@ -128,12 +129,21 @@ def df_to_storage(self, df, filepath):
     return blob.public_url
 
 
+def delete_file(self, filepath):
+    try:
+        self.delete_blob(filepath)
+    except NotFound:
+        print(f'"{filepath}" not found')
+        pass
+
+
 DocumentReference.doc_to_dict = doc_to_dict
 CollectionReference.query_to_dict = query_to_dict
 Query.query_to_dict = query_to_dict
 Bucket.dict_from_storage = dict_from_storage
 Bucket.dict_to_storage = dict_to_storage
 Bucket.df_to_storage = df_to_storage
+Bucket.delete_file = delete_file
 
 
 def set_cell(worksheet, pos, value, url=None, font_size=None, color=None, background_color=None,

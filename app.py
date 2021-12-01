@@ -23,22 +23,9 @@ def main():
     db = load_firestore()
     bucket = load_storage()
 
-    # TEST 測試用
-    # on = 'survey'
-    # gsid = '1EZyy8mtp7Ce-Q09p_L6lHxNkw444fQDUDmkDzb2L2vw'
-    # action = 'update_download_files'
-
-    # on = 'project'
-    # gsid = '1MYKhzY9g7AZHxbIUN8-oUCPEEXUWHRy4U-1Pe2pbRRE'
-    # action = 'update'
-
-    # gsid = '1XdDOKK8i1fPpw1UnmTQGydYDSsxZj-OvuvYCdBDXmZY'
-    # gsid = '1sC26FL_R-zPWm9EMGaNEFgU0ClDJFeb8CqaUTCPgA9U'
-    # gsid = '1Xv8tLj-IVyaCtwX5gciWrCzC2psY4fKW9c8QP6Bgd3I'
-
     # H_3 action
     if on == 'team':
-        target = Team(gsheets=gsheets, db=db)
+        target = Team(gsheets=gsheets, db=db, bucket=bucket)
     elif on == 'project':
         target = Project(gsheets=gsheets, db=db)
     elif on == 'survey':
