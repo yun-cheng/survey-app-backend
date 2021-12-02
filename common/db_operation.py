@@ -1,4 +1,39 @@
 from .common import *
+from google.cloud.firestore_v1.base_document import BaseDocumentReference
+from google.cloud.firestore_v1 import async_document
+from typing import AsyncGenerator
+
+
+class Batch:
+    def __init__(self, batch):
+        self.batch = batch
+        self.batch_list = []
+
+    def set(self, ref: BaseDocumentReference, data: dict):
+        self.batch_list.append({'action': 'set', 'ref': ref, 'data': data})
+
+    def delete(self, ref: BaseDocumentReference):
+        self.batch_list.append({'action': 'delete', 'ref': ref})
+
+    def delete_docs(self, docs: AsyncGenerator[async_document.DocumentSnapshot, None]):
+        for doc in docs:
+            self.batch_list.append({'action': 'delete', 'ref': doc.reference})
+
+    def commit(self):
+        count = 0
+        for job in self.batch_list:
+            if job['action'] == 'set':
+                self.batch.set(job['ref'], job['data'])
+            elif job['action'] == 'delete':
+                self.batch.delete(job['ref'])
+
+            count += 1
+            if count == 500:
+                self.batch.commit()
+                count = 0
+
+        self.batch.commit()
+        self.batch_list = []
 
 
 def get_team_dict(self, custom_team_id):
@@ -45,7 +80,7 @@ def get_survey_dict(self, custom_survey_id):
 #         return ''
 
 
-def get_response_dict(self, survey_id, module_type):
+def get_module_response_dict(self, survey_id, module_type):
     query = self.db.collection('surveyResponse') \
         .where('projectId', '==', self.project_gsid) \
         .where('surveyId', '==', survey_id) \
@@ -56,7 +91,9 @@ def get_response_dict(self, survey_id, module_type):
     return result_dict
 
 
-def get_all_responses_dict(self):
+def get_survey_response_dict(self):
+    self.set_where(0, '從資料庫下載所有回覆')
+
     query = self.db.collection('surveyResponse') \
         .where('surveyId', '==', self.gsid) \
         .where('responseStatus', '==', 'finished') \
@@ -73,7 +110,7 @@ def get_all_responses_dict(self):
 
     result_dict.update(result_dict_1)
 
-    return result_dict
+    self.response_dict = result_dict
 
 
 def get_respondent_response_dict(self, respondent_id, interviewer_id):
@@ -84,6 +121,14 @@ def get_respondent_response_dict(self, respondent_id, interviewer_id):
         .where('interviewerId', '==', interviewer_id) \
         .where('isDeleted', '==', False)
     result_dict = query.query_to_dict()
+
+    return result_dict
+
+
+def get_team_dict_from_field(self, field, field_value):
+    query = self.db.collection('team') \
+        .where(field, '==', field_value)
+    result_dict = query.query_to_dict(first=True)
 
     return result_dict
 
@@ -159,12 +204,9 @@ def set_survey(self):
 
 
 def batch_delete_responses(self):
+    self.set_where(0, '清除資料庫所有回覆')
     query_docs = self.db.collection('surveyResponse') \
         .where('surveyId', '==', self.gsid) \
         .where('isDeleted', '==', False).stream()
-    delete_docs(query_docs)
+    self.batch.delete_docs(query_docs)
 
-
-def delete_docs(docs):
-    for doc in docs:
-        doc.reference.delete()

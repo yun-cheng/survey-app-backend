@@ -1,9 +1,9 @@
 
 from common.load_credentials import *
-from team import Team
+from team.team import Team
 from project.project import Project
 from survey.survey import Survey
-from survey_module import SurveyModule
+from survey_module.survey_module import SurveyModule
 
 app = Flask(__name__)
 

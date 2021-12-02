@@ -1,6 +1,21 @@
 from .common import set_where
 
 
+def check_team_valid(self):
+    self.set_where(0, '檢查資訊頁內容是否正確')
+
+    info_dict = self.info_dict
+
+    # S_ 檢查是否為空
+    for k, v in info_dict.items():
+        if not v:
+            self.set_where(1, '單位資訊不能為空', error=True)
+
+    # S_ 檢查是否為重複的單位 ID 或名稱
+    self.check_team_field_value_not_occupied('customTeamId')
+    self.check_team_field_value_not_occupied('teamName')
+
+
 def check_survey_valid(self):
     self.set_where(0, '檢查資訊頁內容是否正確')
 
@@ -66,6 +81,13 @@ def check_project_valid(self):
     result += f'{id_occupied}{name_occupied}'
 
     return result
+
+
+def check_team_field_value_not_occupied(self, field):
+    check_dict = self.get_team_dict_from_field(field, self.info_dict[field])
+
+    if check_dict and check_dict['teamId'] != self.gsid:
+        self.set_where(1, f'已有相同的 {self.info_dict[field]}，請重新命名', error=True)
 
 
 def check_survey_field_value_not_occupied(self, field):

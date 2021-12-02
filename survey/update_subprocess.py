@@ -60,18 +60,15 @@ def transfer_respondents(self):
 def update_respondent_list(self):
     self.set_where(0, '處理受訪者分頁內容')
 
-    # H_ 更新 Firestore: interviewerRespondentList/{interviewerId_surveyId}
-    # NOTE DELETE, SET operation
-    # S_1 先移除所有之前新增至資料庫中的受訪者
+    # NOTE interviewerRespondentList/{interviewerId_surveyId}
+    # S_ 先移除所有之前新增至資料庫中的受訪者
     self.set_where(1, '先移除所有之前新增至資料庫中的受訪者')
 
-    remove_docs_list = self.db.collection('interviewerRespondentList') \
+    query_docs = self.db.collection('interviewerRespondentList') \
         .where('surveyId', '==', self.gsid).stream()
+    self.batch.delete_docs(query_docs)
 
-    for doc in remove_docs_list:
-        self.batch.delete(doc.reference)
-
-    # S_2 新增此問卷的受訪者列表
+    # S_ 新增此問卷的受訪者列表
     self.set_where(1, '提取受訪者分頁中的資料表')
 
     respondent_df = get_worksheet_df(self.spreadsheet,
@@ -126,7 +123,7 @@ def update_reference_list(self):
         for reference_key, question_id_list in reference_dict.items():
             # S_ 從資料庫篩出所有這個 reference_key 所對應的 responses
             # FIXME 不能是當前 survey
-            response_dict = self.get_response_dict(reference_key[0], reference_key[1])
+            response_dict = self.get_module_response_dict(reference_key[0], reference_key[1])
 
             for k, response in response_dict.items():
                 # S_ 篩出需要的 respondentId 資料
@@ -165,11 +162,9 @@ def update_reference_list(self):
             reference_df = reference_df.append(init_answer_df, ignore_index=True)
 
         # S_3 移除此問卷的所有參考作答列表
-        remove_docs_list = self.db.collection('interviewerReferenceList') \
+        query_docs = self.db.collection('interviewerReferenceList') \
             .where('surveyId', '==', self.gsid).stream()
-
-        for doc in remove_docs_list:
-            self.batch.delete(doc.reference)
+        self.batch.delete_docs(query_docs)
 
         # S_4 以訪員區分，批次上傳
         if len(reference_df):

@@ -38,6 +38,6 @@
 
 - 有關 Firebase 的設定需先 cd 進 firebase 資料夾
 
-## Firestore bug
+## Firestore batch
 
-- 目前在 batch.commit() 的數量到達一定程度時會報錯，應該是他們的 bug，但還是先捨棄使用
+- batch.commit() 的 task 數量不能超過 500，而且可能有 bug，因此自己寫了一個 Batch 來處理

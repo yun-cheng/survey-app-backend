@@ -10,7 +10,7 @@ service firebase.storage {
     }
 
     match /audio/{allPaths=**} {
-      allow read;
+      allow read, write, list;
     }
 
   }
