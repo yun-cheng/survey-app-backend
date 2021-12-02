@@ -21,10 +21,6 @@ service cloud.firestore {
             allow read, write;
         }
 
-        match /interviewerMap/{document=**} {
-            allow read, write;
-        }
-
         match /interviewerRespondentList/{document=**} {
             allow read, write;
         }

@@ -10,7 +10,8 @@ class Batch:
         self.batch_list = []
 
     def set(self, ref: BaseDocumentReference, data: dict):
-        self.batch_list.append({'action': 'set', 'ref': ref, 'data': data})
+        # HIGHLIGHT 需要 copy data 才不會在原始 variable 變動時跟著改變
+        self.batch_list.append({'action': 'set', 'ref': ref, 'data': data.copy()})
 
     def delete(self, ref: BaseDocumentReference):
         self.batch_list.append({'action': 'delete', 'ref': ref})
