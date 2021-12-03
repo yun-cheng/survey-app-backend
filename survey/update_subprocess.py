@@ -122,8 +122,10 @@ def update_reference_list(self):
 
         for reference_key, question_id_list in reference_dict.items():
             # S_ 從資料庫篩出所有這個 reference_key 所對應的 responses
-            # FIXME 不能是當前 survey
-            response_dict = self.get_module_response_dict(reference_key[0], reference_key[1])
+            response_dict = {}
+            # NOTE 不能是當前 surveyId
+            if reference_key[0] != self.gsid:
+                response_dict = self.get_module_response_dict(reference_key[0], reference_key[1])
 
             for k, response in response_dict.items():
                 # S_ 篩出需要的 respondentId 資料
