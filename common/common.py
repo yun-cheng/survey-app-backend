@@ -23,7 +23,7 @@ from google.cloud.storage.bucket import Bucket
 
 
 #
-app_version = '211203_1'
+app_version = '211204_1'
 tw_tz = pytz.timezone('Asia/Taipei')
 
 # NOTE 切換 prod/dev
@@ -152,6 +152,7 @@ def set_cell(worksheet, pos, value, url=None, font_size=None, color=None, backgr
         'red': (1, 0, 0, 0),
         'blue': (0, 0, 1, 0),
         'yellow': (1, 1, 0, 0),
+        'orange': (1, 0.6, 0, 0),
         'white': (1, 1, 1, 0)
     }
     cell = pygsheets.Cell(pos, worksheet=worksheet)

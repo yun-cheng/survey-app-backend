@@ -43,10 +43,12 @@ class Survey:
         get_survey_module_question_list, to_formatted_text_list
 
     from .update_subprocess import update_respondent_list, update_survey_question, \
-        update_reference_list, transfer_respondents
+        update_reference_list
 
     from .update_download_files_subprocess import process_response_df, process_info_df, \
         process_progress_df, process_wide_df, process_download_link, public_audio_link
+
+    from .transfer_subprocess import transfer_respondents
 
     def init(self, gsid):
         # S_ 連接 spreadsheet
@@ -115,8 +117,6 @@ class Survey:
             self.init(gsid)
 
             self.transfer_respondents()
-
-            # self.batch.commit()
 
             return f'轉出入成功！請關閉視窗，避免頁面重整後重新送出更新請求。<br/><br/>' \
                    f'執行歷程：{self.where_list_to_str()}'
