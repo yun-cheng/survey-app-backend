@@ -116,7 +116,21 @@ class Survey:
         try:
             self.init(gsid)
 
+            # S_ 轉出入受訪者
             self.transfer_respondents()
+
+            # S_ 處理受訪者分頁內容
+            self.update_respondent_list()
+
+            # S_ 從資料庫提取 reference_key_list
+            old_survey_dict = self.get_survey_dict(self.survey_dict['customSurveyId'])
+            self.reference_key_list = old_survey_dict['referenceKeyList']
+
+            # S_ 更新參考作答列表
+            self.set_where(0, '更新參考作答列表')
+            self.update_reference_list()
+
+            self.batch.commit()
 
             return f'轉出入成功！請關閉視窗，避免頁面重整後重新送出更新請求。<br/><br/>' \
                    f'執行歷程：{self.where_list_to_str()}'

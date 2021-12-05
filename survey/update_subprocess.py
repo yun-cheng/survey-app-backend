@@ -34,29 +34,31 @@ def update_survey_question(self):
     # NOTE SET operation
     self.set_where(0, '處理各個問卷模組資料表')
 
-    # S_1 提取問卷
+    # S_ 提取問卷
     self.set_where(1, f'提取{self.info_dict["surveyWorksheetName"]}分頁資料表')
 
     self.survey_dict['module']['main'] = \
         self.get_survey_question_list(self.spreadsheet, self.info_dict['surveyWorksheetName'], 'main')
 
-    # S_2 提取問卷模組
+    # S_ 提取問卷模組
     for module in self.module_dict:
         self.survey_dict['module'][module] = \
             self.get_survey_module_question_list(self.module_dict[module]['surveyModuleId'], module)
 
+    # S_ 將問卷資訊存入資料庫
     survey_ref = self.db.document('survey', self.gsid)
     mini_survey_dict = self.survey_dict.copy()
     mini_survey_dict.pop('module')
     mini_survey_dict['random'] = str(uuid.uuid4())
+    mini_survey_dict['referenceKeyList'] = self.reference_key_list
     self.batch.set(survey_ref, mini_survey_dict)
 
 
 def update_reference_list(self):
     # NOTE 事先會在 to_formatted_text_list 將 customSurveyId 轉 surveyId 等等
     # H_ 更新 Firestore: interviewerReferenceList/{interviewerId_surveyId}
-    # S_1 整理 reference_key_list
     if self.reference_key_list:
+        # S_1 整理 reference_key_list
         reference_dict = pd.DataFrame(self.reference_key_list) \
             .groupby(['surveyId', 'moduleType'])['questionId'] \
             .apply(list).to_dict()
