@@ -11,14 +11,14 @@ class Project:
         self.team_gsid = ''
         self.gsid = ''
         self.info_dict = {}
-        self.response_list = []
+        self.reference_list = []
         self.type = 'project'
 
     from common.create import create, link_url
-    from common.db_operation import get_team_dict, get_project_dict_from_field, batch_set_response
+    from common.db_operation import get_team_dict, get_project_dict_from_field, batch_set_reference
     from common.check_valid import check_project_valid, check_project_field_value_not_occupied
     from common.translate import get_translate_df, translate
-    from .update_subprocess import update_response_list
+    from .update_subprocess import update_reference_list
 
     def update(self, gsid):
         try:
@@ -49,8 +49,8 @@ class Project:
             if check_result:
                 return check_result
 
-            # S_4 更新匯入歷史作答
-            self.update_response_list()
+            # S_4 更新參考作答
+            self.update_reference_list()
 
             # S_5 更新 project
             # NOTE Firestore SET

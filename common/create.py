@@ -73,7 +73,8 @@ def link_url(self):
             worksheet.delete_rows(2, n_row - 15)
 
         if worksheet.get_value(f'A{n_row}') != app_version:
-            worksheet.clear('A2', f'A{n_row}', fields='*')
+            worksheet.clear('A2', f'A5', fields='*')
+            worksheet.clear('A10', f'A{n_row}', fields='*')
 
             # S_ '更新此問卷設定' 連結
             update_url = f'{main_url}?action=update&on=survey&gsid={gsid}'

@@ -34,7 +34,7 @@ class Survey:
     from common.db_operation import get_team_dict, get_project_dict, get_survey_module_dict, \
         get_survey_dict, get_module_response_dict, get_survey_response_dict, \
         get_respondent_response_dict, batch_set_by_interviewer, get_survey_dict_from_field, \
-        set_survey, batch_delete_responses
+        set_survey, batch_delete_response
 
     from .choice import create_choice_list, choice_import_to_df
     from .expression import reformat_expression
@@ -144,7 +144,7 @@ class Survey:
         try:
             self.init(gsid)
 
-            self.batch_delete_responses()
+            self.batch_delete_response()
             self.batch.commit()
 
             return f'清除資料庫所有回覆成功！請關閉視窗，避免頁面重整後重新送出更新請求。<br/><br/>' \
