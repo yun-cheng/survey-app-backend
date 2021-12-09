@@ -29,7 +29,8 @@ class Batch:
                 self.batch.delete(job['ref'])
 
             count += 1
-            if count == 500:
+            # FIXME delete 不知為何沒辦法累積到 500 commit，80 就報錯了，因此先設 50
+            if count == 50:
                 self.batch.commit()
                 count = 0
 
