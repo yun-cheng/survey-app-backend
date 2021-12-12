@@ -63,6 +63,8 @@ def reformat_expression(self, row, column):
 
                 if question_id == 'ANS':
                     question_id = row['questionId']
+                elif question_id == 'LEN':
+                    question_id = '__LEN'
 
                 operator = self.translate(operator, 'operator')
 
