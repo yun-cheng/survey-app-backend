@@ -44,6 +44,13 @@ def get_survey_question_list(self, spreadsheet, survey_worksheet_name, module):
     self.set_where(2, '提取頁數')
     question_list_df['pageNumber'] = question_list_df.pageNumber.map(int)
 
+    # S_ splitColumnChoiceCount
+    if 'splitColumnChoiceCount' not in question_list_df.columns:
+        question_list_df['splitColumnChoiceCount'] = ''
+    split_count = self.info_dict.get('splitColumnChoiceCount', '4')
+    question_list_df.splitColumnChoiceCount.replace('', split_count, inplace=True)
+    question_list_df['splitColumnChoiceCount'] = question_list_df.splitColumnChoiceCount.astype(int)
+
     # S_ other columns
     self.set_where(2, '處理其他')
     question_list_df['stringBody'] = ''
@@ -107,6 +114,7 @@ def get_recode_question_list(self, spreadsheet, survey_worksheet_name):
     question_list_df[['hideQuestionId', 'hasSpecialAnswer']] = False, False
     question_list_df['serialNumber'] = question_list_df.index
     question_list_df['recodeNeeded'] = question_list_df.recodeNeeded == '1'
+    question_list_df['splitColumnChoiceCount'] = 4
     question_list_df['questionType'] = question_list_df.recodeNeeded.apply(
         lambda x: 'number' if x else 'description')
     question_list_df['answerStatusType'] = question_list_df.recodeNeeded.apply(
