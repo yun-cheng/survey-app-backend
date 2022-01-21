@@ -67,33 +67,39 @@ def link_url(self):
 
     elif self.type == 'survey':
         n_row = worksheet.rows
-        if n_row < 15:
-            worksheet.add_rows(15 - n_row)
-        elif n_row > 15:
-            worksheet.delete_rows(2, n_row - 15)
+        set_row = 18
+        if n_row < set_row:
+            worksheet.add_rows(set_row - n_row)
+        elif n_row > set_row:
+            worksheet.delete_rows(2, n_row - set_row)
 
         if worksheet.get_value(f'A{n_row}') != app_version:
-            worksheet.clear('A2', f'A5', fields='*')
-            worksheet.clear('A10', f'A{n_row}', fields='*')
+            worksheet.clear('A2', f'A6', fields='*')
+            worksheet.clear('A11', f'A{n_row}', fields='*')
 
             # S_ '更新此問卷設定' 連結
             update_url = f'{main_url}?action=update&on=survey&gsid={gsid}'
             set_cell(worksheet, 'A3', '更新此問卷設定', url=update_url, font_size=36,
                      background_color='yellow', horizontal_alignment='center')
 
+            # S_ '更新此受訪者' 連結
+            update_url = f'{main_url}?action=update_respondents&on=survey&gsid={gsid}'
+            set_cell(worksheet, 'A4', '更新此受訪者', url=update_url, font_size=36,
+                     background_color='yellow', horizontal_alignment='center')
+
             # S_ '更新下載資料連結' 連結
             update_result_url = f'{main_url}?action=update_download_files&on=survey&gsid={gsid}'
-            set_cell(worksheet, 'A4', '更新下載資料連結', url=update_result_url, font_size=36,
+            set_cell(worksheet, 'A5', '更新下載資料連結', url=update_result_url, font_size=36,
                      background_color='yellow', horizontal_alignment='center')
 
             # S_ '轉出入受訪者' 連結
             transfer_url = f'{main_url}?action=transfer&on=survey&gsid={gsid}'
-            set_cell(worksheet, 'A11', '轉出入受訪者', url=transfer_url, font_size=36,
+            set_cell(worksheet, 'A12', '轉出入受訪者', url=transfer_url, font_size=36,
                      background_color='orange', horizontal_alignment='center')
 
             # S_ '清除資料庫所有回覆' 連結
             delete_result_url = f'{main_url}?action=delete_all_responses&on=survey&gsid={gsid}'
-            set_cell(worksheet, 'A13', '清除資料庫所有回覆', url=delete_result_url, font_size=36,
+            set_cell(worksheet, 'A15', '清除資料庫所有回覆', url=delete_result_url, font_size=36,
                      background_color='red', color='white', horizontal_alignment='center')
 
             # S_ '刪除此問卷設定' 連結
@@ -101,7 +107,7 @@ def link_url(self):
             # set_cell(worksheet, 'A6', '刪除此問卷設定', url=delete_url, font_size=36, background_color='red',
             #          color='white', horizontal_alignment='center')
 
-            worksheet.update_value(f'A{n_row}', app_version)
+            worksheet.update_value(f'A{set_row}', app_version)
 
     elif self.type == 'module':
         # S_ '更新此問卷模組設定' 連結

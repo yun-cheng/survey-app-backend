@@ -42,8 +42,8 @@ class Survey:
     from .question import get_survey_question_list, get_recode_question_list, \
         get_survey_module_question_list, to_formatted_text_list
 
-    from .update_subprocess import update_respondent_list, update_survey_question, \
-        update_reference_list
+    from .update_subprocess import get_respondents_data, update_respondent_list, \
+        update_survey_question, update_reference_list
 
     from .update_download_files_subprocess import process_response_df, process_info_df, \
         process_progress_df, process_wide_df, process_download_link, public_audio_link
@@ -89,8 +89,8 @@ class Survey:
         try:
             self.init(gsid)
 
-            # S_ 處理受訪者分頁內容
-            self.update_respondent_list()
+            # S_ 提取受訪者資料
+            self.get_respondents_data()
 
             # S_ 處理各個問卷模組資料表
             self.update_survey_question()
@@ -109,6 +109,25 @@ class Survey:
 
         except:
             return f'更新問卷設定失敗！請關閉視窗，避免頁面重整後重新送出更新請求。<br/><br/>' \
+                   f'錯誤出現在：<br/>{self.where_to_str()}<br/><br/>' \
+                   f'執行歷程：{self.where_list_to_str()}'
+
+    def update_respondents(self, gsid):
+        try:
+            self.init(gsid)
+
+            # S_ 處理受訪者分頁內容
+            self.update_respondent_list()
+
+            # S_ 批次同步
+            self.set_where(0, '批次同步')
+            self.batch.commit()
+
+            return f'更新受訪者成功！請關閉視窗，避免頁面重整後重新送出更新請求。<br/><br/>' \
+                   f'執行歷程：{self.where_list_to_str()}'
+
+        except:
+            return f'更新受訪者失敗！請關閉視窗，避免頁面重整後重新送出更新請求。<br/><br/>' \
                    f'錯誤出現在：<br/>{self.where_to_str()}<br/><br/>' \
                    f'執行歷程：{self.where_list_to_str()}'
 

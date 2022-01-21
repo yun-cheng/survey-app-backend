@@ -224,11 +224,11 @@ def process_download_link(self):
     self.set_where(1, '更新設定檔連結')
     worksheet = self.spreadsheet.worksheet_by_title('說明')
 
-    set_cell(worksheet, 'A6', '下載模組回覆', url=response_url, font_size=24,
+    set_cell(worksheet, 'A7', '下載模組回覆', url=response_url, font_size=24,
              horizontal_alignment='center')
-    set_cell(worksheet, 'A7', '下載受訪者回覆', url=wide_url, font_size=24,
+    set_cell(worksheet, 'A8', '下載受訪者回覆', url=wide_url, font_size=24,
              horizontal_alignment='center')
-    set_cell(worksheet, 'A8', '下載回覆資訊', url=info_url, font_size=24,
+    set_cell(worksheet, 'A9', '下載回覆資訊', url=info_url, font_size=24,
              horizontal_alignment='center')
-    set_cell(worksheet, 'A9', '下載受訪者進度', url=progress_url, font_size=24,
+    set_cell(worksheet, 'A10', '下載受訪者進度', url=progress_url, font_size=24,
              horizontal_alignment='center')

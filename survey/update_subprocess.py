@@ -1,6 +1,20 @@
 from common.common import *
 
 
+def get_respondents_data(self):
+    self.set_where(0, '提取受訪者資料')
+
+    respondent_df = get_worksheet_df(self.spreadsheet,
+                                     worksheet_title=self.info_dict['respondentWorksheetName'],
+                                     end='F')
+    respondent_df.columns = self.translate(respondent_df.columns.to_series(), '受訪地址')
+
+    self.interviewer_list = respondent_df.interviewerId.unique()
+    respondent_df.index = respondent_df['respondentId']
+    self.respondent_df = respondent_df
+    self.survey_dict['interviewerList'] = list(self.interviewer_list)
+
+
 def update_respondent_list(self):
     self.set_where(0, '處理受訪者分頁內容')
 
@@ -22,8 +36,6 @@ def update_respondent_list(self):
 
     self.interviewer_list = respondent_df.interviewerId.unique()
     respondent_df.index = respondent_df['respondentId']
-    self.respondent_df = respondent_df
-    self.survey_dict['interviewerList'] = list(self.interviewer_list)
 
     self.set_where(1, '新增受訪者至資料庫中')
     self.batch_set_by_interviewer(respondent_df, 'interviewerRespondentList', type='map')

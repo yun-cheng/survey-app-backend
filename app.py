@@ -42,6 +42,8 @@ def main():
             return target.update(gsid=gsid)
         elif action == 'delete' and gsid:
             return target.delete(gsid=gsid)
+        elif on == 'survey' and action == 'update_respondents' and gsid:
+            return target.update_respondents(gsid=gsid)
         elif on == 'survey' and action == 'transfer' and gsid:
             return target.transfer(gsid=gsid)
         elif on == 'survey' and action == 'update_download_files' and gsid:
