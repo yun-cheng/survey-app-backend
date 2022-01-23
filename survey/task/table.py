@@ -2,7 +2,6 @@ from common.common import *
 
 
 def process_table_question(self, question_list_df):
-    # try:
     table_id_list = question_list_df.tableId.unique().tolist()
 
     if len(table_id_list) > 1:
@@ -90,5 +89,3 @@ def process_table_question(self, question_list_df):
                         .append(question_list_df.iloc[index_to_drop[0]:], ignore_index=True)
 
     return question_list_df
-    # except:
-    #     self.set_where(3, f'', error=True)

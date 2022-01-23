@@ -23,7 +23,7 @@ from google.cloud.storage.bucket import Bucket
 
 
 #
-app_version = '220121_1'
+app_version = '220124_1'
 tw_tz = pytz.timezone('Asia/Taipei')
 
 # NOTE 切換 prod/dev
@@ -31,6 +31,26 @@ if os.environ['ENV'] == 'dev':
     main_url = 'https://survey-app-backend-hhbdnactua-de.a.run.app/'
 else:
     main_url = 'https://interviewer-quiz-lrqnbewzdq-de.a.run.app/'
+
+
+def try_run_process(self, process_name, run_process, gsid):
+    try:
+        self.init_process(gsid)
+
+        run_process()
+
+        return f'{process_name}成功！請關閉視窗，避免頁面重整後重新送出更新請求。<br/><br/>' \
+               f'執行歷程：{self.where_list_to_str()}'
+
+    except:
+        return f'{process_name}失敗！請關閉視窗，避免頁面重整後重新送出更新請求。<br/><br/>' \
+               f'錯誤出現在：<br/>{self.where_to_str()}<br/><br/>' \
+               f'執行歷程：{self.where_list_to_str()}'
+
+
+def batch_commit(self):
+    self.set_where(0, '批次同步')
+    self.batch.commit()
 
 
 def set_where(self, index=0, str='', error=False):

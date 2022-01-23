@@ -1,17 +1,5 @@
 from common.common import *
-
-
-def get_answer_value(row):
-    if row['type'] == 'string':
-        return row['stringValue']
-    elif row['type'] == 'choice':
-        return row['choiceValue']
-    elif row['type'] == 'int':
-        return row['intValue']
-    elif row['type'] == 'choiceList':
-        return row['choiceListValue']
-    else:
-        return None
+from ..task.download_files import get_answer_value, wide_question_id
 
 
 def process_response_df(self):
@@ -90,21 +78,6 @@ def process_response_df(self):
     self.response_df = response_df
 
 
-def public_audio_link(self, row):
-    responseId = row['responseId']
-    audio_link = ''
-    if row['moduleType'] == 'main':
-        blob = self.bucket.blob(f'audio/{responseId}/{responseId}.m4a')
-        try:
-            if blob.exists():
-                blob.make_public()
-                audio_link = blob.public_url
-        except:
-            audio_link = ''
-
-    return audio_link
-
-
 def process_info_df(self):
     self.set_where(0, '處理回覆資訊資料')
 
@@ -160,19 +133,6 @@ def process_progress_df(self):
     self.progress_df = progress_df
 
 
-def wide_question_id(row):
-    question_id = row['questionId']
-    if row['moduleType'] == 'visitReport':
-        question_id = f"{row['moduleType']}__{row['idInGroup']}__{question_id}"
-    else:
-        question_id = f"{row['moduleType']}__{question_id}"
-
-    if row['isNote']:
-        question_id += '__note_' + str(row['noteOf'])
-
-    return question_id
-
-
 def process_wide_df(self):
     self.set_where(0, '轉成受訪者回覆資料')
 
@@ -224,6 +184,7 @@ def process_download_link(self):
     self.set_where(1, '更新設定檔連結')
     worksheet = self.spreadsheet.worksheet_by_title('說明')
 
+    worksheet.clear('A7', f'A10', fields='*')
     set_cell(worksheet, 'A7', '下載模組回覆', url=response_url, font_size=24,
              horizontal_alignment='center')
     set_cell(worksheet, 'A8', '下載受訪者回覆', url=wide_url, font_size=24,

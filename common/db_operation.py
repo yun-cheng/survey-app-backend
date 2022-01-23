@@ -201,6 +201,8 @@ def batch_set_reference(self, df):
 
 
 def set_survey(self):
+    self.set_where(0, '問卷資料另存至 storage')
+
     self.bucket.dict_to_storage(self.survey_dict, f'survey/{self.gsid}/try.json')
     self.bucket.dict_to_storage(self.survey_dict, f'survey/{self.gsid}/{self.gsid}.json')
 

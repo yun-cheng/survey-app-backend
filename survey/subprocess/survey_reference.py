@@ -1,72 +1,9 @@
 from common.common import *
 
 
-def get_respondents_data(self):
-    self.set_where(0, '提取受訪者資料')
-
-    respondent_df = get_worksheet_df(self.spreadsheet,
-                                     worksheet_title=self.info_dict['respondentWorksheetName'],
-                                     end='F')
-    respondent_df.columns = self.translate(respondent_df.columns.to_series(), '受訪地址')
-
-    self.interviewer_list = respondent_df.interviewerId.unique()
-    respondent_df.index = respondent_df['respondentId']
-    self.respondent_df = respondent_df
-    self.survey_dict['interviewerList'] = list(self.interviewer_list)
-
-
-def update_respondent_list(self):
-    self.set_where(0, '處理受訪者分頁內容')
-
-    # NOTE interviewerRespondentList/{interviewerId_surveyId}
-    # S_ 先移除所有之前新增至資料庫中的受訪者
-    self.set_where(1, '先移除所有之前新增至資料庫中的受訪者')
-
-    query_docs = self.db.collection('interviewerRespondentList') \
-        .where('surveyId', '==', self.gsid).stream()
-    self.batch.delete_docs(query_docs)
-
-    # S_ 新增此問卷的受訪者列表
-    self.set_where(1, '提取受訪者分頁中的資料表')
-
-    respondent_df = get_worksheet_df(self.spreadsheet,
-                                     worksheet_title=self.info_dict['respondentWorksheetName'],
-                                     end='F')
-    respondent_df.columns = self.translate(respondent_df.columns.to_series(), '受訪地址')
-
-    self.interviewer_list = respondent_df.interviewerId.unique()
-    respondent_df.index = respondent_df['respondentId']
-
-    self.set_where(1, '新增受訪者至資料庫中')
-    self.batch_set_by_interviewer(respondent_df, 'interviewerRespondentList', type='map')
-
-
-def update_survey_question(self):
-    # H_ 更新 Firestore: survey/{surveyId}
-    # NOTE SET operation
-    self.set_where(0, '處理各個問卷模組資料表')
-
-    # S_ 提取問卷
-    self.set_where(1, f'提取{self.info_dict["surveyWorksheetName"]}分頁資料表')
-
-    self.survey_dict['module']['main'] = \
-        self.get_survey_question_list(self.spreadsheet, self.info_dict['surveyWorksheetName'], 'main')
-
-    # S_ 提取問卷模組
-    for module in self.module_dict:
-        self.survey_dict['module'][module] = \
-            self.get_survey_module_question_list(self.module_dict[module]['surveyModuleId'], module)
-
-    # S_ 將問卷資訊存入資料庫
-    survey_ref = self.db.document('survey', self.gsid)
-    mini_survey_dict = self.survey_dict.copy()
-    mini_survey_dict.pop('module')
-    mini_survey_dict['random'] = str(uuid.uuid4())
-    mini_survey_dict['referenceKeyList'] = self.reference_key_list
-    self.batch.set(survey_ref, mini_survey_dict)
-
-
 def update_reference_list(self):
+    self.set_where(0, '更新參考作答列表')
+
     # NOTE 事先會在 to_formatted_text_list 將 customSurveyId 轉 surveyId 等等
     # H_ 更新 Firestore: interviewerReferenceList/{interviewerId_surveyId}
     if self.reference_key_list:

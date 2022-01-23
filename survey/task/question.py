@@ -1,7 +1,20 @@
 from common.common import *
 
 
-def get_survey_question_list(self, spreadsheet, survey_worksheet_name, module):
+def get_survey_module_question_list(self, gsid, module):
+    spreadsheet = self.gsheets.open_by_key(gsid)
+
+    survey_worksheet_name = self.module_dict[module]['surveyModuleWorksheetName']
+
+    self.set_where(1, f'提取{survey_worksheet_name}分頁資料表')
+
+    if module == 'recode':
+        return self.get_recode_question_list(spreadsheet, survey_worksheet_name)
+    else:
+        return self.get_question_list(spreadsheet, survey_worksheet_name, module, )
+
+
+def get_question_list(self, spreadsheet, survey_worksheet_name, module):
     question_list_df = get_worksheet_df(spreadsheet, worksheet_title=survey_worksheet_name)
 
     self.set_where(2, '翻譯欄位名稱與題目類型')
@@ -140,19 +153,6 @@ def get_recode_question_list(self, spreadsheet, survey_worksheet_name):
         'answerMap': answer_dict,
         'answerStatusMap': answer_status_dict,
     }
-
-
-def get_survey_module_question_list(self, gsid, module):
-    spreadsheet = self.gsheets.open_by_key(gsid)
-
-    survey_worksheet_name = self.module_dict[module]['surveyModuleWorksheetName']
-
-    self.set_where(1, f'提取{survey_worksheet_name}分頁資料表')
-
-    if module == 'recode':
-        return self.get_recode_question_list(spreadsheet, survey_worksheet_name)
-    else:
-        return self.get_survey_question_list(spreadsheet, survey_worksheet_name, module)
 
 
 def to_formatted_text_list(self, row, current_module_type):
