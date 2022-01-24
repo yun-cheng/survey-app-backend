@@ -84,7 +84,7 @@ def link_url(self):
 
             # S_ '更新此受訪者' 連結
             update_url = f'{main_url}?action=update_respondents&on=survey&gsid={gsid}'
-            set_cell(worksheet, 'A4', '更新此受訪者', url=update_url, font_size=36,
+            set_cell(worksheet, 'A4', '更新受訪者', url=update_url, font_size=36,
                      background_color='yellow', horizontal_alignment='center')
 
             # S_ '更新下載資料連結' 連結
