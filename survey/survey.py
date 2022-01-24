@@ -41,21 +41,21 @@ class Survey:
         transfer_respondents_process, update_download_files_process, delete_all_responses_process
 
     # NOTE subprocess
-    from subprocess.survey_survey import update_mini_survey, get_survey_module
-    from subprocess.survey_respondent import get_respondent_and_interviewer_data, \
+    from .subprocess.survey_survey import update_mini_survey, get_survey_module
+    from .subprocess.survey_respondent import get_respondent_and_interviewer_data, \
         update_interviewer_respondent_list, transfer_respondents
-    from subprocess.survey_reference import update_reference_list
-    from subprocess.survey_download_files import process_response_df, process_info_df, \
-        process_progress_df, process_wide_df, process_download_link, public_audio_link
+    from .subprocess.survey_reference import update_reference_list
+    from .subprocess.survey_download_files import process_response_df, process_info_df, \
+        process_progress_df, process_wide_df, process_download_link
 
     # NOTE task
-    from task.question import get_question_list, get_recode_question_list, \
+    from .task.question import get_question_list, get_recode_question_list, \
         get_survey_module_question_list, to_formatted_text_list
-    from task.choice import create_choice_list, choice_import_to_df
-    from task.expression import reformat_expression
-    from task.table import process_table_question
-    from task.respondent import get_respondent_df
-    from task.download_files import public_audio_link
+    from .task.choice import create_choice_list, choice_import_to_df
+    from .task.expression import reformat_expression
+    from .task.table import process_table_question
+    from .task.respondent import get_respondent_df
+    from .task.download_files import public_audio_link
 
     def update(self, gsid):
         return self.try_run_process('更新問卷設定', self.update_survey_process, gsid)
