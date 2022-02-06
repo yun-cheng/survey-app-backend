@@ -41,6 +41,19 @@ def choice_row_to_df(row, regex):
     return choice_df
 
 
+def transform_choice_id(x, transformer, pad_zero, min_digit, digit):
+    try:
+        min_digit = int(min_digit)
+    except:
+        min_digit = 0
+
+    if pad_zero == '1':
+        final_digit = max(digit, min_digit)
+        x = x.zfill(final_digit)
+
+    return transformer.replace('1', x)
+
+
 def create_choice_list(self, row, spreadsheet):
     try:
         if row['questionType'] in ['single', 'multiple', 'popupSingle', 'popupMultiple']:
@@ -58,8 +71,22 @@ def create_choice_list(self, row, spreadsheet):
 
         choice_df = choice_df.append(special_answer_df, ignore_index=True)
 
+        # H_ transformedId
+        transformer = self.info_dict.get('transformChoiceId', '(1)')
+        pad_zero = self.info_dict.get('padZero', '')
+        min_digit = self.info_dict.get('forcePadZeroTo', '')
+        digit = 0
+        if len(choice_df):
+            digit = max(choice_df.choiceId.str.len())
+
+        choice_df['transformedId'] = choice_df.choiceId.apply(transform_choice_id,
+                                                              transformer=transformer,
+                                                              pad_zero=pad_zero,
+                                                              min_digit=min_digit,
+                                                              digit=digit)
+
         # S_ 按選項順序的分組
-        # https://stackoverflow.com/a/62419908
+        # NOTE https://stackoverflow.com/a/62419908
         choice_df['consecutiveChoiceGroup'] = choice_df.choiceGroup.ne(choice_df.choiceGroup.shift()).cumsum()
         choice_df['groupId'] = choice_df.groupby([choice_df.choiceGroup, choice_df.consecutiveChoiceGroup])[
             'choiceGroup'].cumcount()
