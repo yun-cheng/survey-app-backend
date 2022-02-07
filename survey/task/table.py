@@ -9,8 +9,8 @@ def process_table_question(self, question_list_df):
             if table_id:
                 table_df = question_list_df[question_list_df.tableId == table_id].reset_index(
                     drop=True)
-                # S_ 表格類型
                 table_type = table_df.loc[0, 'questionType']
+                # H_ 簡單表格
                 if table_type == 'simpleTable':
                     table_df['questionId'] = table_id + table_df.questionId
                     table_df['rowId'] = table_df.index - 1
@@ -25,7 +25,7 @@ def process_table_question(self, question_list_df):
                         lambda x: '' if x == '' else f'({x}) & ')
                     table_df.loc[1:, 'showQuestion'] = table_df.loc[1:, 'showQuestion'] + \
                                                        f'({table_question_id} != 1)'
-
+                # H_ 複雜表格
                 elif table_type == 'complexTable':
                     # NOTE 分 row, col, cell 處理
                     col_df = table_df[table_df.isTableColumn == '1'].reset_index(drop=True)
@@ -71,6 +71,8 @@ def process_table_question(self, question_list_df):
                     # NOTE row_df 的 * 在 reformat_expression 排除
                     cell_df['showQuestion'] = cell_df.apply(
                         lambda row: row.showQuestion.replace('*', row.tableColId), axis=1)
+                    cell_df['upperQuestionId'] = cell_df.apply(
+                        lambda row: row.upperQuestionId.replace('*', row.tableColId), axis=1)
 
                     cell_df.drop(columns=['tableRowId', 'tableColId'], inplace=True)
 
