@@ -50,6 +50,7 @@ def create(self, email):
 def link_url(self):
     worksheet = self.spreadsheet.worksheet_by_title('說明')
     gsid = self.gsid
+    n_row = worksheet.rows
 
     if self.type == 'project':
         update_url = f'{main_url}?action=update&on=project&gsid={gsid}'
@@ -59,14 +60,33 @@ def link_url(self):
         worksheet.update_value('A5', f'=HYPERLINK("{delete_url}", "刪除此專案")')
 
     elif self.type == 'team':
-        update_url = f'{main_url}?action=update&on=team&gsid={gsid}'
-        worksheet.update_value('A3', f'=HYPERLINK("{update_url}", "更新此單位設定")')
+        set_row = 10
+        if n_row < set_row:
+            worksheet.add_rows(set_row - n_row)
+        elif n_row > set_row:
+            worksheet.delete_rows(2, n_row - set_row)
 
-        delete_url = f'{main_url}?action=delete&on=team&gsid={gsid}'
-        worksheet.update_value('A5', f'=HYPERLINK("{delete_url}", "刪除此單位")')
+        if worksheet.get_value(f'A{n_row}') != app_version:
+            worksheet.clear('A1', f'A{n_row}', fields='*')
+
+            # S_ '設定檔說明' 連結
+            doc_url = 'https://yunchengdev.notion.site/2e80fd569f2348d29ecd25671d544da1'
+            set_cell(worksheet, 'A1', '設定檔說明', url=doc_url, font_size=36,
+                     horizontal_alignment='center')
+
+            # S_ '更新此單位設定' 連結
+            update_url = f'{main_url}?action=update&on=team&gsid={gsid}'
+            set_cell(worksheet, 'A3', '更新此單位設定', url=update_url, font_size=36,
+                     background_color='yellow', horizontal_alignment='center')
+
+            # S_ '刪除此單位及底下所有設定與資料' 連結
+            delete_team_url = f'{main_url}?action=delete&on=team&gsid={gsid}'
+            set_cell(worksheet, 'A6', '刪除此單位及底下所有設定與資料', url=delete_team_url, font_size=36,
+                     background_color='red', color='white', horizontal_alignment='center')
+
+            worksheet.update_value(f'A{set_row}', app_version)
 
     elif self.type == 'survey':
-        n_row = worksheet.rows
         set_row = 18
         if n_row < set_row:
             worksheet.add_rows(set_row - n_row)
@@ -74,8 +94,12 @@ def link_url(self):
             worksheet.delete_rows(2, n_row - set_row)
 
         if worksheet.get_value(f'A{n_row}') != app_version:
-            worksheet.clear('A2', f'A6', fields='*')
-            worksheet.clear('A11', f'A{n_row}', fields='*')
+            worksheet.clear('A1', f'A{n_row}', fields='*')
+
+            # S_ '設定檔說明' 連結
+            doc_url = 'https://yunchengdev.notion.site/2e80fd569f2348d29ecd25671d544da1'
+            set_cell(worksheet, 'A1', '設定檔說明', url=doc_url, font_size=36,
+                     horizontal_alignment='center')
 
             # S_ '更新此問卷設定' 連結
             update_url = f'{main_url}?action=update&on=survey&gsid={gsid}'

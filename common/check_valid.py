@@ -1,4 +1,4 @@
-from .common import set_where
+from .common import set_where, set_cell
 
 
 def check_team_valid(self):
@@ -20,6 +20,7 @@ def check_survey_valid(self):
     self.set_where(0, '檢查資訊頁內容是否正確')
 
     info_dict = self.info_dict
+    worksheet = self.spreadsheet.worksheet_by_title('問卷資訊')
 
     # S_1 檢查是否為空
     module_names = ['samplingWithinHousehold', 'visitReport', 'housingType', 'interviewReport', 'recode']
@@ -28,25 +29,34 @@ def check_survey_valid(self):
             self.set_where(1, '問卷資訊不能為空', error=True)
 
     # S_2 檢查連結的單位 ID、專案 ID 是否存在
-    team_dict = self.get_team_dict(info_dict['customTeamId'])
+    custom_team_id = info_dict['customTeamId']
+    team_dict = self.get_team_dict(custom_team_id)
     if team_dict:
         self.team_gsid = team_dict['teamId']
+        url = f'https://docs.google.com/spreadsheets/d/{self.team_gsid}'
+        set_cell(worksheet, info_dict['cell']['customTeamId'], custom_team_id, url=url)
     else:
         self.set_where(1, f'找不到連結的單位 ID: {info_dict["customTeamId"]}', error=True)
 
-    project_dict = self.get_project_dict(info_dict['customProjectId'])
+    custom_project_id = info_dict['customProjectId']
+    project_dict = self.get_project_dict(custom_project_id)
     if project_dict:
         self.project_gsid = project_dict['projectId']
+        url = f'https://docs.google.com/spreadsheets/d/{self.project_gsid}'
+        set_cell(worksheet, info_dict['cell']['customProjectId'], custom_project_id, url=url)
     else:
         self.set_where(1, f'找不到連結的專案 ID: {info_dict["customProjectId"]}', error=True)
 
     # S_3 統一檢查問卷模組 ID 是否存在
     for module in info_dict:
         if module in module_names and info_dict[module]:
-            module_dict = self.get_survey_module_dict(info_dict[module])
+            this_module_id = info_dict[module]
+            module_dict = self.get_survey_module_dict(this_module_id)
 
             if module_dict:
                 self.module_dict[module] = module_dict
+                url = f'https://docs.google.com/spreadsheets/d/{module_dict["surveyModuleId"]}'
+                set_cell(worksheet, info_dict['cell'][module], this_module_id, url=url)
             else:
                 self.set_where(1, f'找不到連結的問卷模組 ID: {info_dict[module]}', error=True)
 
