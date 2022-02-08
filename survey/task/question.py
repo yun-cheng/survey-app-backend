@@ -129,7 +129,7 @@ def get_recode_question_list(self, spreadsheet, survey_worksheet_name):
     question_list_df['recodeNeeded'] = question_list_df.recodeNeeded == '1'
     question_list_df['splitColumnChoiceCount'] = 4
     question_list_df['questionType'] = question_list_df.recodeNeeded.apply(
-        lambda x: 'number' if x else 'description')
+        lambda x: 'integer' if x else 'description')
     question_list_df['answerStatusType'] = question_list_df.recodeNeeded.apply(
         lambda x: 'unanswered' if x else 'answered')
     question_list_df['choiceList'] = [[]] * len(question_list_df)
