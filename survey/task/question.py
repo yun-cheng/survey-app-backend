@@ -11,7 +11,7 @@ def get_survey_module_question_list(self, gsid, module):
     if module == 'recode':
         return self.get_recode_question_list(spreadsheet, survey_worksheet_name)
     else:
-        return self.get_question_list(spreadsheet, survey_worksheet_name, module, )
+        return self.get_question_list(spreadsheet, survey_worksheet_name, module)
 
 
 def get_question_list(self, spreadsheet, survey_worksheet_name, module):
@@ -41,6 +41,11 @@ def get_question_list(self, spreadsheet, survey_worksheet_name, module):
     # TODO 驗證 choiceId 唯一
     # HIGHLIGHT 用 pd.DataFrame(結果.to_list()) 可避免當 question_list_df 只有 1 row 時會出錯
     self.set_where(2, '處理選項與特殊作答')
+
+    if module == 'main' and self.info_dict.get('specialAnswerWorksheetName'):
+        self.special_answer_df = self.choice_import_to_df(
+            spreadsheet, self.info_dict['specialAnswerWorksheetName'], special_answer=True)
+
     question_list_df[['choiceList', 'hasSpecialAnswer', 'answerStatusType']] = \
         pd.DataFrame(question_list_df.apply(
             self.create_choice_list, spreadsheet=spreadsheet, axis=1).to_list())

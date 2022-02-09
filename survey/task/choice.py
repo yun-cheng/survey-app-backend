@@ -69,7 +69,17 @@ def create_choice_list(self, row, spreadsheet):
         special_answer_df = choice_row_to_df(row, regex='specialAnswer_')
         special_answer_df['isSpecialAnswer'] = True
 
+        if 'specialAnswerImport' in row and row.specialAnswerImport:
+            special_answer_list = ast.literal_eval(row.specialAnswerImport)
+            special_answer_list = [str(i) for i in special_answer_list]
+
+            special_answer_import_df = self.special_answer_df[self.special_answer_df.choiceId.isin(special_answer_list)]
+
+            special_answer_df = special_answer_df.append(special_answer_import_df, ignore_index=True)
+
         choice_df = choice_df.append(special_answer_df, ignore_index=True)
+
+        choice_df.drop_duplicates(subset=['choiceId'], ignore_index=True, inplace=True)
 
         # H_ transformedId
         transformer = self.info_dict.get('transformChoiceId', '(1)')
@@ -112,7 +122,7 @@ def create_choice_list(self, row, spreadsheet):
         self.set_where(3, f'題號 {row["questionId"]}', error=True)
 
 
-def choice_import_to_df(self, spreadsheet, choice_import):
+def choice_import_to_df(self, spreadsheet, choice_import, special_answer=False):
     choice_import_df = get_worksheet_df(spreadsheet, worksheet_title=choice_import)
 
     choice_import_df.columns = self.translate(choice_import_df.columns.to_series(), '選項')
@@ -133,7 +143,7 @@ def choice_import_to_df(self, spreadsheet, choice_import):
     if 'isSpecialAnswer' in choice_import_df.columns:
         choice_import_df['isSpecialAnswer'] = choice_import_df.isSpecialAnswer == '1'
     else:
-        choice_import_df['isSpecialAnswer'] = False
+        choice_import_df['isSpecialAnswer'] = special_answer
 
     if 'choiceGroup' not in choice_import_df.columns:
         choice_import_df['choiceGroup'] = ''
