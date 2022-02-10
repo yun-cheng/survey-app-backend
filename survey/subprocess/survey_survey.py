@@ -1,13 +1,15 @@
 from common.common import *
 
 
-def update_mini_survey(self, restore_reference_key_list=False):
+def update_mini_survey(self, full_update=True):
     self.set_where(0, '更新精簡問卷設定')
     survey_ref = self.db.document('survey', self.gsid)
 
-    if restore_reference_key_list:
+    # S_ 因非完整更新，要從舊設定提取資訊
+    if not full_update:
         old_survey_dict = survey_ref.doc_to_dict()
         self.reference_key_list = old_survey_dict['referenceKeyList']
+        self.survey_dict['version'] = old_survey_dict.get('version', '')
 
     mini_survey_dict = self.survey_dict.copy()
     mini_survey_dict.pop('module')
@@ -29,3 +31,13 @@ def get_survey_module(self):
     for module in self.module_dict:
         self.survey_dict['module'][module] = \
             self.get_survey_module_question_list(self.module_dict[module]['surveyModuleId'], module)
+
+
+def update_full_survey(self):
+    # S_ 問卷資料另存至 storage
+    self.set_survey()
+
+    worksheet = self.spreadsheet.worksheet_by_title('說明')
+    set_cell(worksheet, f'A19', f'問卷設定使用之格式版本：{survey_version}')
+    now = datetime.now(tw_tz).strftime('%Y-%m-%d %H:%M:%S')
+    set_cell(worksheet, f'A20', f'問卷設定最後更新時間：{now}')

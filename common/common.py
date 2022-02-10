@@ -23,7 +23,8 @@ from google.cloud.storage.bucket import Bucket
 
 
 #
-app_version = '220209_1'
+backend_version = '220211'
+survey_version = '220211'
 tw_tz = pytz.timezone('Asia/Taipei')
 
 # NOTE 切換 prod/dev

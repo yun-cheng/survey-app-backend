@@ -34,6 +34,7 @@ def init_process(self, gsid):
         'surveyName': self.info_dict['surveyName'],
         'module': defaultdict(dict),
         'moduleInfo': self.module_dict,
+        'version': survey_version,
     }
 
 
@@ -53,16 +54,16 @@ def update_survey_process(self):
     # S_ 批次同步
     self.batch_commit()
 
-    # S_ 問卷資料另存至 storage
-    self.set_survey()
+    # S_ 更新完整問卷設定
+    self.update_full_survey()
 
 
 def update_respondents_process(self):
     # S_ 處理受訪者分頁內容
     self.update_interviewer_respondent_list()
 
-    # S_ 更新精簡問卷設定，同時從資料庫提取 referenceKeyList
-    self.update_mini_survey(restore_reference_key_list=True)
+    # S_ 更新精簡問卷設定，主要是更新 interviewerList
+    self.update_mini_survey(full_update=False)
 
     # S_ 更新參考作答列表
     self.update_reference_list()

@@ -66,7 +66,7 @@ def link_url(self):
         elif n_row > set_row:
             worksheet.delete_rows(2, n_row - set_row)
 
-        if worksheet.get_value(f'A{n_row}') != app_version:
+        if worksheet.get_value(f'A{n_row}') != backend_version:
             worksheet.clear('A1', f'A{n_row}', fields='*')
 
             # S_ '設定檔說明' 連結
@@ -84,17 +84,17 @@ def link_url(self):
             set_cell(worksheet, 'A6', '刪除此單位及底下所有設定與資料', url=delete_team_url, font_size=36,
                      background_color='red', color='white', horizontal_alignment='center')
 
-            worksheet.update_value(f'A{set_row}', app_version)
+            worksheet.update_value(f'A{set_row}', backend_version)
 
     elif self.type == 'survey':
-        set_row = 18
+        set_row = 20
         if n_row < set_row:
             worksheet.add_rows(set_row - n_row)
         elif n_row > set_row:
             worksheet.delete_rows(2, n_row - set_row)
 
-        if worksheet.get_value(f'A{n_row}') != app_version:
-            worksheet.clear('A1', f'A{n_row}', fields='*')
+        if worksheet.get_value('A18') != f'本次操作之後端版本：{backend_version}':
+            worksheet.clear('A1', f'A{set_row}', fields='*')
 
             # S_ '設定檔說明' 連結
             doc_url = 'https://yunchengdev.notion.site/2e80fd569f2348d29ecd25671d544da1'
@@ -131,7 +131,7 @@ def link_url(self):
             # set_cell(worksheet, 'A6', '刪除此問卷設定', url=delete_url, font_size=36, background_color='red',
             #          color='white', horizontal_alignment='center')
 
-            worksheet.update_value(f'A{set_row}', app_version)
+            set_cell(worksheet, 'A18', f'最後操作之後端版本：{backend_version}')
 
     elif self.type == 'module':
         # S_ '更新此問卷模組設定' 連結

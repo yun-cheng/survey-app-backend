@@ -41,7 +41,7 @@ class Survey:
         transfer_respondents_process, update_download_files_process, delete_all_responses_process
 
     # NOTE subprocess
-    from .subprocess.survey_survey import update_mini_survey, get_survey_module
+    from .subprocess.survey_survey import update_mini_survey, get_survey_module, update_full_survey
     from .subprocess.survey_respondent import get_respondent_and_interviewer_data, \
         update_interviewer_respondent_list, transfer_respondents
     from .subprocess.survey_reference import update_reference_list
