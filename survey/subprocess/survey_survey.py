@@ -10,6 +10,7 @@ def update_mini_survey(self, full_update=True):
         old_survey_dict = survey_ref.doc_to_dict()
         self.reference_key_list = old_survey_dict['referenceKeyList']
         self.survey_dict['version'] = old_survey_dict.get('version', '')
+        self.survey_dict['lastUpdatedTimeStamp'] = old_survey_dict.get('lastUpdatedTimeStamp', 0)
 
     mini_survey_dict = self.survey_dict.copy()
     mini_survey_dict.pop('module')
@@ -39,5 +40,4 @@ def update_full_survey(self):
 
     worksheet = self.spreadsheet.worksheet_by_title('說明')
     set_cell(worksheet, f'A19', f'問卷設定使用之格式版本：{survey_version}')
-    now = datetime.now(tw_tz).strftime('%Y-%m-%d %H:%M:%S')
-    set_cell(worksheet, f'A20', f'問卷設定最後更新時間：{now}')
+    set_cell(worksheet, f'A20', f'問卷設定最後更新時間：{now_str}')

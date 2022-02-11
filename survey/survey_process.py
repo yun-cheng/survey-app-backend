@@ -35,6 +35,7 @@ def init_process(self, gsid):
         'module': defaultdict(dict),
         'moduleInfo': self.module_dict,
         'version': survey_version,
+        'lastUpdatedTimeStamp': now_timestamp,
     }
 
 

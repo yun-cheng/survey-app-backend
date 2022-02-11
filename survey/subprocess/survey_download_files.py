@@ -169,15 +169,15 @@ def process_download_link(self):
 
     # S_ 上傳到資料庫，並產生連結
     self.set_where(1, '上傳到資料庫，並產生連結')
-    now = datetime.now(tw_tz).strftime('%Y-%m-%d_%H.%M.%S')
+    now_str = datetime.now(tw_tz).strftime('%Y-%m-%d_%H.%M.%S')
 
-    info_path = f'response/{self.gsid}/{now}/responses_info_{now}.csv'
+    info_path = f'response/{self.gsid}/{now_str}/responses_info_{now_str}.csv'
     info_url = self.bucket.df_to_storage(self.info_df, info_path)
-    response_path = f'response/{self.gsid}/{now}/module_responses_{now}.csv'
+    response_path = f'response/{self.gsid}/{now_str}/module_responses_{now_str}.csv'
     response_url = self.bucket.df_to_storage(self.response_df, response_path)
-    progress_path = f'response/{self.gsid}/{now}/respondent_progress_{now}.csv'
+    progress_path = f'response/{self.gsid}/{now_str}/respondent_progress_{now_str}.csv'
     progress_url = self.bucket.df_to_storage(self.progress_df, progress_path)
-    wide_path = f'response/{self.gsid}/{now}/respondent_responses_{now}.csv'
+    wide_path = f'response/{self.gsid}/{now_str}/respondent_responses_{now_str}.csv'
     wide_url = self.bucket.df_to_storage(self.wide_df, wide_path)
 
     # S_ 更新設定檔連結
