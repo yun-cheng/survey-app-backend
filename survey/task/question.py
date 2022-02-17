@@ -162,8 +162,8 @@ def get_recode_question_list(self, spreadsheet, survey_worksheet_name):
 
 def to_formatted_text_list(self, row, current_module_type):
     try:
-        pattern = '(\\$\\{.+\\})'
-        split_list = re.split(pattern, row['questionBody'])
+        pattern = '(\\$\\{[^\\$\\{]+\\})'
+        split_list = re.split(pattern, row.questionBody)
 
         keys = ['questionId', 'moduleType', 'surveyId']
 

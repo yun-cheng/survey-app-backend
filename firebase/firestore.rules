@@ -32,5 +32,9 @@ service cloud.firestore {
         match /surveyResponse/{document=**} {
             allow read, write;
         }
+
+        match /surveyCompatibility/{document=**} {
+            allow read, write;
+        }
     }
 }
