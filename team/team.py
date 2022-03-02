@@ -5,7 +5,7 @@ class Team:
         self.gsheets = gsheets
         self.db = db
         self.bucket = bucket
-        self.batch = Batch(self.db.batch())
+        self.batch = Batch(self.db)
         self.gsid = ''
         self.type = 'team'
         self.template_id = '1VRGeK8m-w_ZCjg1SDQ74TZ7jpHsRiTiI3AcD54I5FC8'

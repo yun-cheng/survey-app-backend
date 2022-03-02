@@ -5,8 +5,8 @@ from typing import AsyncGenerator
 
 
 class Batch:
-    def __init__(self, batch):
-        self.batch = batch
+    def __init__(self, db):
+        self.db = db
         self.batch_list = []
 
     def set(self, ref: BaseDocumentReference, data: dict):
@@ -22,19 +22,22 @@ class Batch:
 
     def commit(self):
         count = 0
+        clear = 0
+        batch = self.db.batch()
         for job in self.batch_list:
             if job['action'] == 'set':
-                self.batch.set(job['ref'], job['data'])
+                batch.set(job['ref'], job['data'])
             elif job['action'] == 'delete':
-                self.batch.delete(job['ref'])
+                batch.delete(job['ref'])
 
             count += 1
             # FIXME delete 不知為何沒辦法累積到 500 commit，80 就報錯了，因此先設 50
-            if count == 50:
-                self.batch.commit()
+            if count == 20:
+                batch.commit()
                 count = 0
+                clear += 1
 
-        self.batch.commit()
+        batch.commit()
         self.batch_list = []
 
 

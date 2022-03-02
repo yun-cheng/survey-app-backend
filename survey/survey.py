@@ -5,7 +5,7 @@ class Survey:
         self.gsheets = gsheets
         self.db = db
         self.bucket = bucket
-        self.batch = Batch(self.db.batch())
+        self.batch = Batch(self.db)
         self.team_gsid = ''
         self.project_gsid = ''
         self.gsid = ''
