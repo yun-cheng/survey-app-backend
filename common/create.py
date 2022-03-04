@@ -93,8 +93,8 @@ def link_url(self):
         elif n_row > set_row:
             worksheet.delete_rows(2, n_row - set_row)
 
-        if worksheet.get_value('A18') != f'本次操作之後端版本：{backend_version}':
-            worksheet.clear('A1', f'A{set_row}', fields='*')
+        if worksheet.get_value('A18') != f'最後操作之後端版本：{backend_version}':
+            worksheet.clear('A1', 'A18', fields='*')
 
             # S_ '設定檔說明' 連結
             doc_url = 'https://yunchengdev.notion.site/2e80fd569f2348d29ecd25671d544da1'

@@ -185,11 +185,11 @@ def process_download_link(self):
     worksheet = self.spreadsheet.worksheet_by_title('說明')
 
     worksheet.clear('A7', f'A10', fields='*')
-    set_cell(worksheet, 'A7', '下載模組回覆', url=response_url, font_size=24,
+    set_cell(worksheet, 'A7', '下載模組回覆 (Long)', url=response_url, font_size=24,
              horizontal_alignment='center')
-    set_cell(worksheet, 'A8', '下載受訪者回覆', url=wide_url, font_size=24,
+    set_cell(worksheet, 'A8', '下載受訪者回覆 (Wide)', url=wide_url, font_size=24,
              horizontal_alignment='center')
-    set_cell(worksheet, 'A9', '下載回覆資訊', url=info_url, font_size=24,
+    set_cell(worksheet, 'A9', '下載回覆資訊 (audio)', url=info_url, font_size=24,
              horizontal_alignment='center')
     set_cell(worksheet, 'A10', '下載受訪者進度', url=progress_url, font_size=24,
              horizontal_alignment='center')

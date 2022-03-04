@@ -30,7 +30,7 @@ def wide_question_id(row):
 def public_audio_link(self, row):
     responseId = row['responseId']
     audio_link = ''
-    if row['moduleType'] == 'main':
+    if row['moduleType'] in ['main', 'samplingWithinHousehold']:
         blob = self.bucket.blob(f'audio/{responseId}/{responseId}.m4a')
         try:
             if blob.exists():
