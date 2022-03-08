@@ -107,7 +107,7 @@ def get_survey_response_dict(self):
 
     query = self.db.collection('surveyResponse') \
         .where('surveyId', '==', self.gsid) \
-        .where('moduleType', '==', 'main') \
+        .where('moduleType', 'in', ['main', 'samplingWithinHousehold']) \
         .where('responseStatus', '==', 'answering') \
         .where('editFinished', '==', True) \
         .where('isDeleted', '==', False)
