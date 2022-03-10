@@ -169,15 +169,16 @@ def process_download_link(self):
 
     # S_ 上傳到資料庫，並產生連結
     self.set_where(1, '上傳到資料庫，並產生連結')
+    custom_survey_id = self.info_dict['customSurveyId']
     now_str = datetime.now(tw_tz).strftime('%Y-%m-%d_%H.%M.%S')
 
-    info_path = f'response/{self.gsid}/{now_str}/responses_info_{now_str}.csv'
+    info_path = f'response/{self.gsid}/{now_str}/{custom_survey_id}_responses_info_(audio)_{now_str}.csv'
     info_url = self.bucket.df_to_storage(self.info_df, info_path)
-    response_path = f'response/{self.gsid}/{now_str}/module_responses_{now_str}.csv'
+    response_path = f'response/{self.gsid}/{now_str}/{custom_survey_id}_module_responses_(Long)_{now_str}.csv'
     response_url = self.bucket.df_to_storage(self.response_df, response_path)
-    progress_path = f'response/{self.gsid}/{now_str}/respondent_progress_{now_str}.csv'
+    progress_path = f'response/{self.gsid}/{now_str}/{custom_survey_id}_respondent_progress_{now_str}.csv'
     progress_url = self.bucket.df_to_storage(self.progress_df, progress_path)
-    wide_path = f'response/{self.gsid}/{now_str}/respondent_responses_{now_str}.csv'
+    wide_path = f'response/{self.gsid}/{now_str}/{custom_survey_id}_respondent_responses_(Wide)_{now_str}.csv'
     wide_url = self.bucket.df_to_storage(self.wide_df, wide_path)
 
     # S_ 更新設定檔連結
