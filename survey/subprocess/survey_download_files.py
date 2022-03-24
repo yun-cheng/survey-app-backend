@@ -23,23 +23,24 @@ def process_response_df(self):
                 {'answerStatus': v['answerStatusType'],
                  'lastChangedTimeStamp': v.get('lastChangedTimeStamp', None)})
 
-        answer_df = pd.DataFrame.from_dict(response['answerMap'], orient='index')
-        answer_df.reset_index(inplace=True)
-        answer_df.rename(columns={'index': 'questionId', 'noteMap': 'note'}, inplace=True)
-        answer_df['choiceValue'] = answer_df.choiceValue.apply(
-            lambda x: x['id'] if x is not None else x)
-        answer_df['choiceListValue'] = answer_df.choiceListValue.apply(
-            lambda x: [y['id'] for y in x] if x is not None else x)
-        answer_df['answerValue'] = answer_df.apply(get_answer_value, axis=1)
+        if len(response['answerMap']) != 0:
+            answer_df = pd.DataFrame.from_dict(response['answerMap'], orient='index')
+            answer_df.reset_index(inplace=True)
+            answer_df.rename(columns={'index': 'questionId', 'noteMap': 'note'}, inplace=True)
+            answer_df['choiceValue'] = answer_df.choiceValue.apply(
+                lambda x: x['id'] if x is not None else x)
+            answer_df['choiceListValue'] = answer_df.choiceListValue.apply(
+                lambda x: [y['id'] for y in x] if x is not None else x)
+            answer_df['answerValue'] = answer_df.apply(get_answer_value, axis=1)
 
-        answer_df = answer_df[['questionId', 'type', 'answerStatus', 'answerValue', 'note',
-                               'lastChangedTimeStamp']]
+            answer_df = answer_df[['questionId', 'type', 'answerStatus', 'answerValue', 'note',
+                                   'lastChangedTimeStamp']]
 
-        data = {k: response[k] for k in data_keys}
+            data = {k: response[k] for k in data_keys}
 
-        answer_df = pd.concat([pd.DataFrame(data, index=answer_df.index), answer_df],
-                              axis=1)
-        response_df = response_df.append(answer_df, ignore_index=True)
+            answer_df = pd.concat([pd.DataFrame(data, index=answer_df.index), answer_df],
+                                  axis=1)
+            response_df = response_df.append(answer_df, ignore_index=True)
 
     self.set_where(1, '篩出要保留的資料')
     response_df = response_df[response_df.type != ''].reset_index(drop=True)
