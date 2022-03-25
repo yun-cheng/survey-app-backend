@@ -89,16 +89,17 @@ def process_info_df(self):
         ignore_index=True,
         inplace=True)
 
-    # S_ 模組內編號
+    # S_ 依最後編輯時間的模組內編號
     info_df['idInGroup'] = info_df \
                                .groupby(['respondentId', 'moduleType'], as_index=False) \
                                .cumcount() + 1
 
-    # S_ 各模組最後一筆，以及查址模組全部，是真正需要的資料
+    # S_ 各模組最後一筆"完成"，以及查址模組全部，是真正需要的資料
     self.set_where(1, '篩出要保留的資料')
     info_df['keep'] = 0
 
-    info_df.loc[info_df.groupby(['respondentId', 'moduleType'], as_index=False)
+    info_df.loc[info_df.sort_values('responseStatus') \
+                    .groupby(['respondentId', 'moduleType'], as_index=False)
                     .nth(-1).index, 'keep'] = 1
 
     info_df.loc[(info_df.responseStatus == 'finished') &
