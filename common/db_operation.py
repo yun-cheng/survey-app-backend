@@ -215,4 +215,5 @@ def batch_delete_response(self):
     query_docs = self.db.collection('surveyResponse') \
         .where('surveyId', '==', self.gsid) \
         .where('isDeleted', '==', False).stream()
+    # TODO 改成標記 isDeleted == True
     self.batch.delete_docs(query_docs)

@@ -52,11 +52,27 @@ def get_question_list(self, spreadsheet, survey_worksheet_name, module):
 
     # S_ showQuestion, validateAnswer
     self.set_where(2, '處理題目出現條件')
-    question_list_df['showQuestion'] = question_list_df.apply(
-        self.reformat_expression, column='showQuestion', axis=1)
+    question_list_df[['showQuestion', 'upper']] = \
+        pd.DataFrame(question_list_df.apply(
+            self.reformat_expression, column='showQuestion', axis=1).to_list())
+
     self.set_where(2, '處理檢驗答案')
-    question_list_df['validateAnswer'] = question_list_df.apply(
-        self.reformat_expression, column='validateAnswer', axis=1)
+    question_list_df[['validateAnswer', '_x']] = \
+        pd.DataFrame(question_list_df.apply(
+            self.reformat_expression, column='validateAnswer', axis=1).to_list())
+
+    edgelist = question_list_df[['questionId', 'upper']].explode('upper').dropna()
+    # edgelist['idInGroup'] = edgelist.groupby('upper')['upper'].rank(method='first')
+    adjlist = edgelist.groupby('upper')['questionId'].apply(list).reset_index()
+    adjlist.columns = ['questionId', 'childrenQIdSet']
+
+    question_list_df = question_list_df.merge(adjlist, how='left')
+
+    question_list_df['emptyList'] = [[]] * len(question_list_df)
+
+    question_list_df.loc[question_list_df.childrenQIdSet.isnull(), 'childrenQIdSet'] = question_list_df.emptyList
+
+    question_list_df.drop(columns='emptyList', inplace=True)
 
     # S_ pageNumber
     self.set_where(2, '提取頁數')
@@ -88,7 +104,7 @@ def get_question_list(self, spreadsheet, survey_worksheet_name, module):
     question_list_df = question_list_df.filter(regex='^(?!choiceId_|specialAnswer_|choice_).*', axis=1)
     question_list_df.index = question_list_df.questionId
 
-    survey_question_dict = question_list_df.drop(['answerStatusType'], axis=1).to_dict('index')
+    survey_question_dict = question_list_df.drop(columns=['answerStatusType', '_x'], axis=1).to_dict('index')
     answer_dict = {questionId: {} for questionId in question_list_df.questionId}
     answer_status_dict = question_list_df[['answerStatusType']].to_dict('index')
 
@@ -119,8 +135,9 @@ def get_recode_question_list(self, spreadsheet, survey_worksheet_name):
 
     # S_ validateAnswer
     self.set_where(2, '處理檢驗答案')
-    question_list_df['validateAnswer'] = question_list_df.apply(
-        self.reformat_expression, column='validateAnswer', axis=1)
+    question_list_df[['validateAnswer', '_x']] = \
+        pd.DataFrame(question_list_df.apply(
+            self.reformat_expression, column='validateAnswer', axis=1).to_list())
 
     # S_ other columns
     self.set_where(2, '提取一般欄位')

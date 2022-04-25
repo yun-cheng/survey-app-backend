@@ -11,6 +11,7 @@ def reformat_expression(self, row, column):
 
         full_expression_body = ''
         expression_dict = {}
+        upper = set()
         letters = string.ascii_uppercase
         i = 0
 
@@ -71,6 +72,8 @@ def reformat_expression(self, row, column):
                 full_expression_body += expression_id
                 i += 1
 
+                upper.add(question_id)
+
                 expression_dict[expression_id] = {
                     'field': question_id,
                     'operator': operator,
@@ -82,7 +85,7 @@ def reformat_expression(self, row, column):
             'expressionMap': expression_dict
         }
 
-        return result
+        return result, list(upper)
 
     except:
         self.set_where(3, f'題號 {row["questionId"]} 的 {row[column]}', error=True)

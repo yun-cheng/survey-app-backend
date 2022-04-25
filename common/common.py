@@ -23,8 +23,8 @@ from google.cloud.storage.bucket import Bucket
 
 
 #
-backend_version = '220325'
-survey_version = '220211'
+backend_version = '220425'
+survey_version = '220425'
 tw_tz = pytz.timezone('Asia/Taipei')
 now = datetime.now(tw_tz)
 now_timestamp = int(now.timestamp() * 1e6)
