@@ -108,6 +108,8 @@ def get_question_list(self, spreadsheet, survey_worksheet_name, module):
     answer_dict = {questionId: {} for questionId in question_list_df.questionId}
     answer_status_dict = question_list_df[['answerStatusType']].to_dict('index')
 
+    page_qid_set_dict = question_list_df.groupby('pageNumber')['questionId'].apply(list).to_dict()
+
     # S_ 查址模組若有設定中止訪問題號，需新增預設答案
     if module == 'visitReport':
         answer_dict['break_interview'] = {
@@ -120,6 +122,7 @@ def get_question_list(self, spreadsheet, survey_worksheet_name, module):
         'questionMap': survey_question_dict,
         'answerMap': answer_dict,
         'answerStatusMap': answer_status_dict,
+        'pageQIdSetMap': page_qid_set_dict,
     }
 
 
@@ -170,10 +173,13 @@ def get_recode_question_list(self, spreadsheet, survey_worksheet_name):
     answer_dict = {questionId: {} for questionId in question_list_df.questionId}
     answer_status_dict = question_list_df[['answerStatusType']].to_dict('index')
 
+    page_qid_set_dict = question_list_df.groupby('pageNumber')['questionId'].apply(list).to_dict()
+
     return {
         'questionMap': survey_question_dict,
         'answerMap': answer_dict,
         'answerStatusMap': answer_status_dict,
+        'pageQIdSetMap': page_qid_set_dict,
     }
 
 
