@@ -5,6 +5,10 @@ from ..task.download_files import get_answer_value, wide_question_id
 def process_response_df(self):
     self.set_where(0, '處理模組回覆資料')
 
+    # - 取得跳答碼
+    self.set_where(1, '取得跳答碼')
+    survey_dict = self.get_survey()
+
     # S_ 處理原始資料
     self.set_where(1, '處理原始資料')
     info_keys = ['responseId', 'respondentId', 'moduleType', 'responseStatus',
@@ -21,7 +25,15 @@ def process_response_df(self):
         for k, v in response['answerStatusMap'].items():
             response['answerMap'][k].update(
                 {'answerStatus': v['answerStatusType'],
-                 'lastChangedTimeStamp': v.get('lastChangedTimeStamp', None)})
+                 'lastChangedTimeStamp': v.get('lastChangedTimeStamp', None)
+                 })
+
+            if v['answerStatusType'] == 'hidden':
+                skip_code = survey_dict['module'][response['moduleType']]['questionMap'][k]['skipCode']
+                response['answerMap'][k].update(
+                    {'type': 'string',
+                     'stringValue': skip_code
+                     })
 
         if len(response['answerMap']) != 0:
             answer_df = pd.DataFrame.from_dict(response['answerMap'], orient='index')

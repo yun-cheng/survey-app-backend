@@ -85,6 +85,10 @@ def get_survey_dict(self, custom_survey_id):
 #         return ''
 
 
+def get_survey(self):
+    return self.bucket.dict_from_storage(f'survey/{self.gsid}/{self.gsid}.json')
+
+
 def get_module_response_dict(self, survey_id, module_type):
     query = self.db.collection('surveyResponse') \
         .where('projectId', '==', self.project_gsid) \

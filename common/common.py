@@ -22,8 +22,11 @@ from google.cloud.firestore_v1 import DocumentReference, CollectionReference, Qu
 from google.cloud.storage.bucket import Bucket
 
 
+# FIXME The frame.append method is deprecated
+# FIXME At least one column name in the data frame is an empty string
+# FIXME A value is trying to be set on a copy of a slice from a DataFrame
 #
-backend_version = '220503'
+backend_version = '220525'
 survey_version = '220425'
 tw_tz = pytz.timezone('Asia/Taipei')
 now = datetime.now(tw_tz)

@@ -85,6 +85,10 @@ def get_question_list(self, spreadsheet, survey_worksheet_name, module):
     question_list_df.splitColumnChoiceCount.replace('', split_count, inplace=True)
     question_list_df['splitColumnChoiceCount'] = question_list_df.splitColumnChoiceCount.astype(int)
 
+    # - skipCode
+    if 'skipCode' not in  question_list_df.columns:
+        question_list_df['skipCode'] = ''
+
     # S_ other columns
     self.set_where(2, '處理其他')
     question_list_df['stringBody'] = ''
@@ -141,6 +145,10 @@ def get_recode_question_list(self, spreadsheet, survey_worksheet_name):
     question_list_df[['validateAnswer', '_x']] = \
         pd.DataFrame(question_list_df.apply(
             self.reformat_expression, column='validateAnswer', axis=1).to_list())
+
+    # - skipCode
+    if 'skipCode' not in  question_list_df.columns:
+        question_list_df['skipCode'] = ''
 
     # S_ other columns
     self.set_where(2, '提取一般欄位')
